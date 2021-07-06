@@ -318,7 +318,7 @@ static void uhyve_atexit(void)
 
 	if (klog && verbose)
 	{
-		fputs("\nDump kernel log:\n", stderr);
+		fputs("\nuhyve_atexit Dump kernel log:\n", stderr);
 		fputs("================\n", stderr);
 		fprintf(stderr, "%s\n", klog);
 	}
@@ -1427,6 +1427,7 @@ static int vcpu_loop(void)
 
 				if(ret != 0) // Parent
 				{
+					return 0;
 					printf("I'm parent\n");
 					args->ret = ret;
 					for(int i = 0; i < ncores; i++)
