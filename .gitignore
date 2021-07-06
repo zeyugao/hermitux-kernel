@@ -24,3 +24,4 @@ tools/.proxy.c.swp
 
 .idea
 .vscode
+*.out
