@@ -27,3 +27,4 @@ tools/.proxy.c.swp
 *.out
 
 log
+tests/*.asm

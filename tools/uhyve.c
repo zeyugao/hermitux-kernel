@@ -215,6 +215,8 @@ static int vcpu_init_with_state(struct vcpu_state state);
 int uhyve_loop_with_state_fork(struct vcpu_state *state);
 void set_vcpu_state(int vcpufd, struct vcpu_state state);
 struct vcpu_state get_vcpu_state(int vcpufd);
+void debug_regs(struct kvm_regs regs);
+void debug_mem(unsigned long long rip);
 
 size_t guest_size = 0x20000000ULL;
 uint8_t* guest_mem = NULL;
@@ -891,6 +893,50 @@ static inline void check_network(void)
 	}
 }
 
+static int vcpu_loop_fork(void)
+{
+	int ret;
+
+	/* Try to determine the smallest fd value the guest can use, assume they
+	 * are given sequentially by the kernel */
+	int max_guest_fd = open("/tmp", O_RDONLY, 0x0);
+	if(max_guest_fd != -1) {
+		close(max_guest_fd);
+	} else {
+		/* for now at least let's not let app close stdin/out/err */
+		max_guest_fd = 2;
+	}
+
+	if (restart) {
+		pthread_barrier_wait(&barrier);
+		if (cpuid == 0)
+			no_checkpoint++;
+	}
+	printf("ncores = %d\n", ncores);
+	if (verbose)
+		puts("uhyve is entering vcpu_loop");
+	
+	ret = ioctl(vcpufd, KVM_RUN, NULL);
+
+	printf("ioctl ret = %d\n", ret);
+	printf("exit reason = 0x%x\n", run->exit_reason);
+
+	/* handle requests */
+	switch (run->exit_reason) {
+		case KVM_EXIT_IO:
+			printf("port 0x%x\n", run->io.port);
+			switch (run->io.port) {
+				default:
+					break;
+			}
+			break;
+		default:
+			printf("run->exit_reason = %x\n", run->exit_reason);
+			break;
+	}
+	return 0;
+}
+
 static int vcpu_loop(void)
 {
 	int ret;
@@ -1436,6 +1482,7 @@ static int vcpu_loop(void)
 					for(int i = 0; i < ncores; i++)
 					{
 						printf("Parent Set state to fd = %d\n", vcpu_fds[i]);
+						debug_regs(state[i].regs);
 						set_vcpu_state(vcpu_fds[i], state[i]);
 					}
 					free(state);
@@ -1443,14 +1490,17 @@ static int vcpu_loop(void)
 				}
 				else // Child
 				{
-					// printf("I'm child\n");
-					// args->ret = 0;
+					printf("I'm child\n");
+					args->ret = 0;
 
-					// uhyve_init_fork();
-					// cpuid = 0;
-					// vcpu_init_with_state(state[0]);
+					uhyve_init_fork();
+					cpuid = 0;
+					debug_regs(state[0].regs);
+					vcpu_init_with_state(state[0]);
 
-					// uhyve_loop_with_state_fork(state);
+					debug_mem(state[0].regs.rip);
+
+					uhyve_loop_with_state_fork(state);
 					return 0;
 				}
 				break;
@@ -1971,7 +2021,7 @@ int uhyve_init(char** argv)
 
 int uhyve_init_fork()
 {
-	printf("uhyve_init_fork");
+	printf("uhyve_init_fork\n");
 	// atexit(uhyve_atexit);
 
 	kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
@@ -2071,6 +2121,8 @@ int uhyve_init_fork()
 
 	// create first CPU, it will be the boot processor by default
 	// Postponed to next func
+
+	printf("uhyve_init_fork end\n");
 }
 
 struct vcpu_state get_vcpu_state(int vcpufd)
@@ -2088,6 +2140,16 @@ struct vcpu_state get_vcpu_state(int vcpufd)
 	kvm_ioctl(vcpufd, KVM_GET_VCPU_EVENTS, &state.events);
 
 	return state;
+}
+
+void debug_regs(struct kvm_regs regs)
+{
+	printf("DEBUG regs rip = 0x%llx, rsp = 0x%llx\n", regs.rip, regs.rsp);
+}
+
+void debug_mem(unsigned long long rip)
+{
+	printf("Eight bytes at 0x%llx: %llx\n", rip, *(unsigned long long*)(guest_mem + rip));
 }
 
 void set_vcpu_state(int vcpufd, struct vcpu_state state)
@@ -2126,6 +2188,7 @@ static int vcpu_init_with_state(struct vcpu_state state)
 
 	set_vcpu_state(vcpufd, state);
 
+	printf("vcpu_init_with_state end\n");
 	return 0;
 }
 
@@ -2415,8 +2478,11 @@ int uhyve_loop_with_state_fork(struct vcpu_state *state)
 	printf("uhyve_loop_with_state_fork\n");
 	int i;
 	vcpu_threads[0] = pthread_self();
+	printf("pthread_self = 0x%lx\n", vcpu_threads[0]);
+
 	for(size_t i = 1; i < ncores; i++)
 	{
+		printf("create uhyve thread %ld\n", i);
 		struct thread_arg *arg = (struct thread_arg *)malloc(sizeof(struct thread_arg));
 		arg->cpuid = i;
 		arg->state = state[i];
@@ -2440,6 +2506,7 @@ int uhyve_loop_with_state_fork(struct vcpu_state *state)
 		}
 	}
 
+	printf("vcpu_loop\n");
 	// Run first CPU
-	return vcpu_loop();
+	return vcpu_loop_fork();
 }
