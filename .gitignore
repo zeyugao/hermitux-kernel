@@ -22,3 +22,5 @@ usr/gdb/core
 cscope.out
 tools/.proxy.c.swp
 
+.idea
+.vscode
