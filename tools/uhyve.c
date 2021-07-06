@@ -321,6 +321,10 @@ static void uhyve_atexit(void)
 		fputs("\nuhyve_atexit Dump kernel log:\n", stderr);
 		fputs("================\n", stderr);
 		fprintf(stderr, "%s\n", klog);
+
+		fputs("\nFinished Dump kernel log:\n", stderr);
+		fputs("================\n", stderr);
+
 	}
 
 	// clean up and close KVM
@@ -1427,7 +1431,6 @@ static int vcpu_loop(void)
 
 				if(ret != 0) // Parent
 				{
-					return 0;
 					printf("I'm parent\n");
 					args->ret = ret;
 					for(int i = 0; i < ncores; i++)
