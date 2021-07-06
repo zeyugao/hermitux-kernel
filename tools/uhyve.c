@@ -195,6 +195,21 @@ bool uhyve_seccomp_enabled = false;
 char htux_bin[PATH_MAX+1];
 char htux_kernel[PATH_MAX+1];
 
+struct vcpu_state {
+	struct kvm_regs regs;
+	struct kvm_mp_state mp_state;
+	struct kvm_sregs sregs;
+	struct kvm_fpu fpu;
+	struct {
+		struct kvm_msrs info;
+		struct kvm_msr_entry entries[MAX_MSR_ENTRIES];
+	} msr_data;
+	struct kvm_lapic_state lapic;
+	struct kvm_xsave xsave;
+	struct kvm_xcrs xcrs;
+	struct kvm_vcpu_events events;
+};
+
 size_t guest_size = 0x20000000ULL;
 uint8_t* guest_mem = NULL;
 
@@ -1388,8 +1403,30 @@ static int vcpu_loop(void)
 				}
 
 			case UHYVE_PORT_FORK: {
-				printf("hypervisor fork\n");
+				printf("Hypervisor fork\n");
 
+				int ret = fork();
+				struct vcpu_state *state = (struct vcpu_state *)malloc(sizeof(struct vcpu_state) * ncores);
+
+				for(int i = 0; i < ncores; i++){
+					state[i] = get_vcpu_state(vcpu_fds[i]);
+				}
+
+				if(ret != 0) // Parent
+				{
+					for(int i = 0; i < ncores; i++){
+						set_vcpu_state(vcpu_fds[i], state[i]);
+					}
+					free(state);
+				}
+				else // Child
+				{
+					uhyve_fork();
+					cpuid = 0;
+					vcpu_init_with_state(state[0]);
+
+					uhyve_loop_with_state_fork(state);
+				}
 				break;
 			}
 			default:
@@ -1646,6 +1683,38 @@ static void* uhyve_thread(void* arg)
 	return (void*) ret;
 }
 
+struct thread_arg {
+	uint32_t cpuid;
+	struct vcpu_state state;
+};
+
+static void* uhyve_thread_with_state_fork(void* arg)
+{
+	size_t ret;
+	struct sigaction sa;
+
+	pthread_cleanup_push(uhyve_exit, NULL);
+
+	struct thread_arg *parsed_arg = (struct thread_arg*) arg;
+	cpuid = parsed_arg->cpuid;
+
+	/* Install timer_handler as the signal handler for SIGVTALRM. */
+	memset(&sa, 0x00, sizeof(sa));
+	sa.sa_handler = &sigusr_handler;
+	sigaction(SIGRTMIN, &sa, NULL);
+
+	// create new cpu
+	vcpu_init_with_state(parsed_arg->state);
+	free(parsed_arg);
+
+	// run cpu loop until thread gets killed
+	ret = vcpu_loop();
+
+	pthread_cleanup_pop(1);
+
+	return (void*) ret;
+}
+
 void sigterm_handler(int signum)
 {
 	pthread_exit(0);
@@ -1873,6 +1942,161 @@ int uhyve_init(char** argv)
 
 	return ret;
 }
+
+int uhyve_fork()
+{
+	atexit(uhyve_atexit);
+
+	close(kvm);
+	kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
+	if (kvm < 0)
+		err(1, "Could not open: /dev/kvm");
+
+	/* Create the virtual machine */
+	vmfd = kvm_ioctl(kvm, KVM_CREATE_VM, 0);
+
+	/* Initialize seccomp filter */
+	if(uhyve_seccomp_enabled) {
+		if(uhyve_seccomp_init(vmfd)) {
+			fprintf(stderr, "Error configuring seccomp\n");
+			exit(-1);
+		}
+	}
+
+	uint64_t identity_base = 0xfffbc000;
+	if (ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_SYNC_MMU) > 0) {
+		/* Allows up to 16M BIOSes. */
+		identity_base = 0xfeffc000;
+
+		kvm_ioctl(vmfd, KVM_SET_IDENTITY_MAP_ADDR, &identity_base);
+	}
+	kvm_ioctl(vmfd, KVM_SET_TSS_ADDR, identity_base + 0x1000);
+
+	struct kvm_userspace_memory_region kvm_region = {
+			.slot = 0,
+			.guest_phys_addr = GUEST_OFFSET,
+			.memory_size = guest_size,
+			.userspace_addr = (uint64_t) guest_mem,
+	#ifdef USE_DIRTY_LOG
+			.flags = KVM_MEM_LOG_DIRTY_PAGES,
+	#else
+			.flags = 0,
+	#endif
+	};
+
+	if (guest_size <= KVM_32BIT_GAP_START - GUEST_OFFSET) {
+		kvm_ioctl(vmfd, KVM_SET_USER_MEMORY_REGION, &kvm_region);
+	} else {
+		kvm_region.memory_size = KVM_32BIT_GAP_START - GUEST_OFFSET;
+		kvm_ioctl(vmfd, KVM_SET_USER_MEMORY_REGION, &kvm_region);
+
+		kvm_region.slot = 1;
+		kvm_region.guest_phys_addr = KVM_32BIT_GAP_START+KVM_32BIT_GAP_SIZE;
+		kvm_region.memory_size = guest_size - KVM_32BIT_GAP_SIZE - KVM_32BIT_GAP_START + GUEST_OFFSET;
+		kvm_ioctl(vmfd, KVM_SET_USER_MEMORY_REGION, &kvm_region);
+	}
+
+	kvm_ioctl(vmfd, KVM_CREATE_IRQCHIP, NULL);
+
+	#ifdef KVM_CAP_X2APIC_API
+	// enable x2APIC support
+	struct kvm_enable_cap cap = {
+		.cap = KVM_CAP_X2APIC_API,
+		.flags = 0,
+		.args[0] = KVM_X2APIC_API_USE_32BIT_IDS|KVM_X2APIC_API_DISABLE_BROADCAST_QUIRK,
+	};
+	kvm_ioctl(vmfd, KVM_ENABLE_CAP, &cap);
+#endif
+
+	// initialited IOAPIC with HermitCore's default settings
+	struct kvm_irqchip chip;
+	chip.chip_id = KVM_IRQCHIP_IOAPIC;
+	kvm_ioctl(vmfd, KVM_GET_IRQCHIP, &chip);
+	for(int i=0; i<KVM_IOAPIC_NUM_PINS; i++) {
+		chip.chip.ioapic.redirtbl[i].fields.vector = 0x20+i;
+		chip.chip.ioapic.redirtbl[i].fields.delivery_mode = 0;
+		chip.chip.ioapic.redirtbl[i].fields.dest_mode = 0;
+		chip.chip.ioapic.redirtbl[i].fields.delivery_status = 0;
+		chip.chip.ioapic.redirtbl[i].fields.polarity = 0;
+		chip.chip.ioapic.redirtbl[i].fields.remote_irr = 0;
+		chip.chip.ioapic.redirtbl[i].fields.trig_mode = 0;
+		chip.chip.ioapic.redirtbl[i].fields.mask = i != 2 ? 0 : 1;
+		chip.chip.ioapic.redirtbl[i].fields.dest_id = 0;
+	}
+	kvm_ioctl(vmfd, KVM_SET_IRQCHIP, &chip);
+
+	// try to detect KVM extensions
+	cap_tsc_deadline = kvm_ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_TSC_DEADLINE_TIMER) <= 0 ? false : true;
+	cap_irqchip = kvm_ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_IRQCHIP) <= 0 ? false : true;
+#ifdef KVM_CLOCK_TSC_STABLE
+	cap_adjust_clock_stable = kvm_ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_ADJUST_CLOCK) == KVM_CLOCK_TSC_STABLE ? true : false;
+#endif
+	cap_irqfd = kvm_ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_IRQFD) <= 0 ? false : true;
+	if (!cap_irqfd)
+		err(1, "the support of KVM_CAP_IRQFD is curently required");
+	// TODO: add VAPIC support
+	cap_vapic = kvm_ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_VAPIC) <= 0 ? false : true;
+	//if (cap_vapic)
+	//	printf("System supports vapic\n");
+
+	pthread_barrier_init(&barrier, NULL, ncores);
+
+	cpuid = 0;
+
+	// create first CPU, it will be the boot processor by default
+	int ret = vcpu_init();
+
+	return ret;
+}
+
+struct vcpu_state get_vcpu_state(int vcpufd) {
+	struct vcpu_state state;
+
+	kvm_ioctl(vcpufd, KVM_GET_SREGS, &state.sregs);
+	kvm_ioctl(vcpufd, KVM_GET_REGS, &state.regs);
+	kvm_ioctl(vcpufd, KVM_GET_MSRS, &state.msr_data);
+	kvm_ioctl(vcpufd, KVM_GET_XCRS, &state.xcrs);
+	kvm_ioctl(vcpufd, KVM_GET_MP_STATE, &state.mp_state);
+	kvm_ioctl(vcpufd, KVM_GET_LAPIC, &state.lapic);
+	kvm_ioctl(vcpufd, KVM_GET_FPU, &state.fpu);
+	kvm_ioctl(vcpufd, KVM_GET_XSAVE, &state.xsave);
+	kvm_ioctl(vcpufd, KVM_GET_VCPU_EVENTS, &state.events);
+
+	return state;
+}
+
+void set_vcpu_state(int vcpufd, struct vcpu_state state) {
+	kvm_ioctl(vcpufd, KVM_SET_SREGS, &state.sregs);
+	kvm_ioctl(vcpufd, KVM_SET_REGS, &state.regs);
+	kvm_ioctl(vcpufd, KVM_SET_MSRS, &state.msr_data);
+	kvm_ioctl(vcpufd, KVM_SET_XCRS, &state.xcrs);
+	kvm_ioctl(vcpufd, KVM_SET_MP_STATE, &state.mp_state);
+	kvm_ioctl(vcpufd, KVM_SET_LAPIC, &state.lapic);
+	kvm_ioctl(vcpufd, KVM_SET_FPU, &state.fpu);
+	kvm_ioctl(vcpufd, KVM_SET_XSAVE, &state.xsave);
+	kvm_ioctl(vcpufd, KVM_SET_VCPU_EVENTS, &state.events);
+}
+
+static int vcpu_init_with_state(struct vcpu_state state){
+	vcpu_fds[cpuid] = vcpufd = kvm_ioctl(vmfd, KVM_CREATE_VCPU, cpuid);
+
+	/* Map the shared kvm_run structure and following data. */
+	size_t mmap_size = (size_t) kvm_ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
+
+	// TODO: 每个vcpu初始化的时候都会运行一边这个，但是线程之间共享堆，也就是会把run给覆盖掉
+	// 这个函数是 static 的会不会有影响
+	run = mmap(NULL, mmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, vcpufd, 0);
+	if (run == MAP_FAILED)
+		err(1, "KVM: VCPU mmap failed");
+
+	run->apic_base = APIC_DEFAULT_BASE;
+	setup_cpuid(kvm, vcpufd);
+
+	set_vcpu_state(vcpufd, state);
+
+	return 0;
+}
+
 
 static void timer_handler(int signum)
 {
@@ -2137,6 +2361,39 @@ int uhyve_loop(int argc, char **argv)
 		uhyve_gdb_init(vcpufd);
 
 	/* Add vcpu_fds to the seccomp filter then load it */
+	if(uhyve_seccomp_enabled) {
+		for(i=0; i<ncores; i++)
+			if(uhyve_seccomp_add_vcpu_fd(vcpu_fds[i])) {
+				fprintf(stderr, "Cannot add vcpu_fd to seccomp filter\n");
+				exit(-1);
+			}
+
+		if(uhyve_seccomp_load()) {
+			fprintf(stderr, "Cannot load seccomp filter\n");
+			exit(-1);
+		}
+	}
+
+	// Run first CPU
+	return vcpu_loop();
+}
+
+int uhyve_loop_with_state_fork(struct vcpu_state *state)
+{
+	int i;
+	vcpu_threads[0] = pthread_self();
+	for(size_t i = 1; i < ncores; i++)
+	{
+		struct thread_arg *arg = (struct thread_arg *)malloc(sizeof(struct thread_arg));
+		arg->cpuid = i;
+		arg->state = state[i];
+		pthread_create(&vcpu_threads[i], NULL, uhyve_thread_with_state_fork, (void *)arg);
+	}
+	free(state);
+
+	if(uhyve_gdb_enabled)
+		uhyve_gdb_init(vcpufd);
+	
 	if(uhyve_seccomp_enabled) {
 		for(i=0; i<ncores; i++)
 			if(uhyve_seccomp_add_vcpu_fd(vcpu_fds[i])) {

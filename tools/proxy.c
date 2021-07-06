@@ -44,6 +44,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <stdbool.h>
 #include <unistd.h>
 
 #include "proxy.h"
