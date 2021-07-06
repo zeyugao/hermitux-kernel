@@ -906,7 +906,7 @@ static int vcpu_loop(void)
 		if (cpuid == 0)
 			no_checkpoint++;
 	}
-
+	printf("ncores = %d\n", ncores);
 	if (verbose)
 		puts("uhyve is entering vcpu_loop");
 
@@ -1435,17 +1435,19 @@ static int vcpu_loop(void)
 						set_vcpu_state(vcpu_fds[i], state[i]);
 					}
 					free(state);
+					printf("Parent end\n");
 				}
 				else // Child
 				{
-					printf("I'm child\n");
-					args->ret = 0;
+					// printf("I'm child\n");
+					// args->ret = 0;
 
-					uhyve_init_fork();
-					cpuid = 0;
-					vcpu_init_with_state(state[0]);
+					// uhyve_init_fork();
+					// cpuid = 0;
+					// vcpu_init_with_state(state[0]);
 
-					uhyve_loop_with_state_fork(state);
+					// uhyve_loop_with_state_fork(state);
+					return 0;
 				}
 				break;
 			}

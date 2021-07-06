@@ -134,7 +134,7 @@ int uhyve_elf_loader(const char* path) {
 		pie_offset = 0x400000 + PAGE_FLOOR(rand()%(0x10000000 - 0x400000));
 #endif
 		pie_offset = 0x400000;
-		printf("PIE detected, loading application at 0x%llx\n", pie_offset);
+		printf("PIE detected, loading application at 0x%lx\n", pie_offset);
 	}
 
 	tux_entry = hdr.e_entry + pie_offset;

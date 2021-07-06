@@ -3,8 +3,8 @@
 int main(){
     int ret = fork();
     if (ret == 0){
-        printf("Child\n");
+        printf("prog: Child\n");
     }else{
-        printf("Parent %d\n", ret);
+        printf("prog: Parent %d\n", ret);
     }
 }

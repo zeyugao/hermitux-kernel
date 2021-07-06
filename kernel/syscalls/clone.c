@@ -1,9 +1,13 @@
+#include <asm/uhyve.h>
+#include <hermit/logging.h>
+#include <hermit/spinlock.h>
 #include <hermit/syscall.h>
 #include <hermit/tasks.h>
-#include <hermit/spinlock.h>
-#include <hermit/logging.h>
 #include <hermit/time.h>
-#include <asm/uhyve.h>
+
+typedef struct {
+	int ret;
+} __attribute__ ((packed)) uhyve_fork_t;
 
 /* From Linux sources: */
 #define CLONE_VM				0x00000100
@@ -20,9 +24,11 @@ int sys_clone(unsigned long clone_flags, void *stack, int *ptid, int *ctid,
 	/* fork */
 	if(!(clone_flags & CLONE_VM)) {
 		LOG_INFO("fork\n");
-		uhyve_send(UHYVE_PORT_FORK, 0);
+		uhyve_fork_t uhyve_args = {-1};
+
+		uhyve_send(UHYVE_PORT_FORK, (unsigned)virt_to_phys((size_t)&uhyve_args));
 		
-		return 0;
+		return uhyve_args.ret;
 	}
 
 	/* To understand how set/clear_child_tidwork, see the man page for
