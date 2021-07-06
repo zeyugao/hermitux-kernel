@@ -1223,9 +1223,9 @@ static int vcpu_loop(void)
 				char addr2line_call[128];
 				unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
 				uhyve_pfault_t *arg = (uhyve_pfault_t *)(guest_mem + data);
-				fprintf(stderr, "GUEST PAGE FAULT @0x%llx (RIP @0x%llx)\n",
+				fprintf(stderr, "GUEST PAGE FAULT @0x%lx (RIP @0x%lx)\n",
 						arg->addr, arg->rip);
-				sprintf(addr2line_call, "addr2line -a %llx -e %s\n", arg->rip,
+				sprintf(addr2line_call, "addr2line -a %lx -e %s\n", arg->rip,
 						(arg->rip >= tux_start_address) ? htux_bin :
 						htux_kernel);
 				system(addr2line_call);
@@ -1237,7 +1237,7 @@ static int vcpu_loop(void)
 				unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
 				uhyve_fault_t *arg = (uhyve_fault_t *)(guest_mem + data);
 
-				fprintf(stderr, "GUEST EXCEPTION %u (RIP @0x%x)\n", arg->int_no,
+				fprintf(stderr, "GUEST EXCEPTION %u (RIP @0x%lx)\n", arg->int_no,
 						arg->rip);
 
 				break;
@@ -1314,7 +1314,7 @@ static int vcpu_loop(void)
 					/* Set the host path */
 					while(line[i] != ';') {
 						if(i >= MINIFS_LOAD_MAXPATH) {
-							fprintf(stderr, "minifs load from %s: % too long\n",
+							fprintf(stderr, "minifs load from %s: %s too long\n",
 									filename, "hostpath");
 							arg->hostpath[0] = arg->guestpath[0] = '\0';
 							break;
@@ -1329,7 +1329,7 @@ static int vcpu_loop(void)
 					guestpath_offset = i;
 					while(line[i] != '\n') {
 						if((i-guestpath_offset) >= MINIFS_LOAD_MAXPATH) {
-							fprintf(stderr, "minifs load from %s: % too long\n",
+							fprintf(stderr, "minifs load from %s: %s too long\n",
 									filename, "hostpath");
 							arg->hostpath[0] = arg->guestpath[0] = '\0';
 							break;
