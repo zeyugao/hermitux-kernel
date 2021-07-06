@@ -1412,26 +1412,35 @@ static int vcpu_loop(void)
 				printf("Hypervisor fork\n");
 				struct vcpu_state *state = (struct vcpu_state *)malloc(sizeof(struct vcpu_state) * ncores);
 
-				for(int i = 0; i < ncores; i++){
+				for(int i = 0; i < ncores; i++)
+				{
+					printf("Get state from fd = %d\n", vcpu_fds[i]);
 					state[i] = get_vcpu_state(vcpu_fds[i]);
 				}
 				int ret = fork();
 				printf("ret = %d\n", ret);
 
 				unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
+
+				printf("ret = %d, data offset = %d\n", ret, data);
 				uhyve_fork_t *args = (uhyve_fork_t *) (guest_mem+data);
 
 				if(ret != 0) // Parent
 				{
+					printf("I'm parent\n");
 					args->ret = ret;
-					for(int i = 0; i < ncores; i++){
+					for(int i = 0; i < ncores; i++)
+					{
+						printf("Parent Set state to fd = %d\n", vcpu_fds[i]);
 						set_vcpu_state(vcpu_fds[i], state[i]);
 					}
 					free(state);
 				}
 				else // Child
 				{
+					printf("I'm child\n");
 					args->ret = 0;
+
 					uhyve_init_fork();
 					cpuid = 0;
 					vcpu_init_with_state(state[0]);
@@ -1956,7 +1965,8 @@ int uhyve_init(char** argv)
 
 int uhyve_init_fork()
 {
-	atexit(uhyve_atexit);
+	printf("uhyve_init_fork");
+	// atexit(uhyve_atexit);
 
 	kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
 	if (kvm < 0)
@@ -1964,6 +1974,8 @@ int uhyve_init_fork()
 
 	/* Create the virtual machine */
 	vmfd = kvm_ioctl(kvm, KVM_CREATE_VM, 0);
+
+	printf("KVM_CREATE_VM fd = %d\n", vmfd);
 
 	/* Initialize seccomp filter */
 	if(uhyve_seccomp_enabled) {
@@ -2087,10 +2099,15 @@ void set_vcpu_state(int vcpufd, struct vcpu_state state)
 
 static int vcpu_init_with_state(struct vcpu_state state)
 {
+	printf("vcpu_init_with_state\n");
 	vcpu_fds[cpuid] = vcpufd = kvm_ioctl(vmfd, KVM_CREATE_VCPU, cpuid);
+
+	printf("KVM_CREATE_VCPU\n");
 
 	/* Map the shared kvm_run structure and following data. */
 	size_t mmap_size = (size_t) kvm_ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
+
+	printf("KVM_GET_VCPU_MMAP_SIZE = %d\n", mmap_size);
 
 	// TODO: 每个vcpu初始化的时候都会运行一边这个，但是线程之间共享堆，也就是会把run给覆盖掉
 	// 这个函数是 static 的会不会有影响
@@ -2389,6 +2406,7 @@ int uhyve_loop(int argc, char **argv)
 
 int uhyve_loop_with_state_fork(struct vcpu_state *state)
 {
+	printf("uhyve_loop_with_state_fork\n");
 	int i;
 	vcpu_threads[0] = pthread_self();
 	for(size_t i = 1; i < ncores; i++)
