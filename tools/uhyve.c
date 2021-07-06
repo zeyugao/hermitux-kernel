@@ -2107,7 +2107,7 @@ static int vcpu_init_with_state(struct vcpu_state state)
 	/* Map the shared kvm_run structure and following data. */
 	size_t mmap_size = (size_t) kvm_ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
 
-	printf("KVM_GET_VCPU_MMAP_SIZE = %d\n", mmap_size);
+	printf("KVM_GET_VCPU_MMAP_SIZE = %ld\n", mmap_size);
 
 	// TODO: 每个vcpu初始化的时候都会运行一边这个，但是线程之间共享堆，也就是会把run给覆盖掉
 	// 这个函数是 static 的会不会有影响
