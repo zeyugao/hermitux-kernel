@@ -5,6 +5,6 @@ int main(){
     if (ret == 0){
         printf("Child\n");
     }else{
-        printf("Parent\n");
+        printf("Parent %d\n", ret);
     }
 }

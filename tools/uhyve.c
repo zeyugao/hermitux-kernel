@@ -34,48 +34,46 @@
 
  #define _GNU_SOURCE
 
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sched.h>
-#include <signal.h>
-#include <limits.h>
-#include <pthread.h>
-#include <semaphore.h>
+#include <asm/mman.h>
 #include <elf.h>
 #include <err.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <linux/const.h>
+#include <linux/kvm.h>
 #include <poll.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
+#include <pthread.h>
+#include <sched.h>
+#include <semaphore.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/eventfd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/eventfd.h>
-#include <linux/const.h>
-#include <linux/kvm.h>
-#include <asm/mman.h>
 #include <sys/syscall.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-#include "uhyve.h"
-#include "uhyve-cpu.h"
-#include "uhyve-syscalls.h"
-#include "uhyve-net.h"
-#include "uhyve-elf.h"
 #include "proxy.h"
+#include "uhyve-cpu.h"
+#include "uhyve-elf.h"
 #include "uhyve-gdb.h"
 #include "uhyve-msr.h"
+#include "uhyve-net.h"
 #include "uhyve-profiler.h"
+#include "uhyve-syscalls.h"
+#include "uhyve.h"
 
-#include "miniz.h"
 #include "mini_gzip.h"
+#include "miniz.h"
 
 #include "uhyve-seccomp.h"
 
@@ -1389,6 +1387,11 @@ static int vcpu_loop(void)
 					break;
 				}
 
+			case UHYVE_PORT_FORK: {
+				printf("hypervisor fork\n");
+
+				break;
+			}
 			default:
 				err(1, "KVM: unhandled KVM_EXIT_IO at port 0x%x, direction %d\n", run->io.port, run->io.direction);
 				break;

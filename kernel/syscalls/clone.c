@@ -3,6 +3,7 @@
 #include <hermit/spinlock.h>
 #include <hermit/logging.h>
 #include <hermit/time.h>
+#include <asm/uhyve.h>
 
 /* From Linux sources: */
 #define CLONE_VM				0x00000100
@@ -16,12 +17,12 @@ int sys_clone(unsigned long clone_flags, void *stack, int *ptid, int *ctid,
 {
 	tid_t id;
 
-	/* Unikernel -> do no allow new processes creation */
+	/* fork */
 	if(!(clone_flags & CLONE_VM)) {
-		LOG_ERROR("clone: unsuported clone method. As a unikernel we do not "
-				"support fork and support only thread creation with the "
-				"CLONE_VM flag\n");
-		return -ENOSYS;
+		LOG_INFO("fork\n");
+		uhyve_send(UHYVE_PORT_FORK, 0);
+		
+		return 0;
 	}
 
 	/* To understand how set/clear_child_tidwork, see the man page for
