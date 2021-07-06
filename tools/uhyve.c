@@ -1681,7 +1681,7 @@ int uhyve_init(char** argv)
 	} else {
 		const char* hermit_memory = getenv("HERMIT_MEM");
 		if (hermit_memory)
-			guest_size = memparse(hermit_memory);
+			guest_size = memparse(hermit_memory);//didn't see this function
 
 		const char* hermit_cpus = getenv("HERMIT_CPUS");
 		if (hermit_cpus)
@@ -1692,7 +1692,7 @@ int uhyve_init(char** argv)
 			printf("full\n");
 			full_checkpoint = true;
 		}
-	}
+	}//get from env: mem cores full_chk(?)
 
 	vcpu_threads = (pthread_t*) calloc(ncores, sizeof(pthread_t));
 	if (!vcpu_threads)
