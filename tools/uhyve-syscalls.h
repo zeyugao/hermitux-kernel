@@ -218,4 +218,8 @@ typedef struct {
     int ret;
 } __attribute__((packed)) uhyve_newfstatat_t;
 
+typedef struct {
+    int ret;
+} __attribute__((packed)) uhyve_fork_t;
+
 #endif // UHYVE_SYSCALLS_H

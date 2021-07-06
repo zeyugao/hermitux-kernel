@@ -1404,16 +1404,21 @@ static int vcpu_loop(void)
 
 			case UHYVE_PORT_FORK: {
 				printf("Hypervisor fork\n");
-
-				int ret = fork();
 				struct vcpu_state *state = (struct vcpu_state *)malloc(sizeof(struct vcpu_state) * ncores);
 
 				for(int i = 0; i < ncores; i++){
 					state[i] = get_vcpu_state(vcpu_fds[i]);
 				}
+				int ret = fork();
+				printf("ret = %d\n", ret);
+
+				int ret;
+				unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
+				uhyve_fork_t *args = (uhyve_fork_t *) (guest_mem+data);
 
 				if(ret != 0) // Parent
 				{
+					args->ret = ret;
 					for(int i = 0; i < ncores; i++){
 						set_vcpu_state(vcpu_fds[i], state[i]);
 					}
@@ -1421,7 +1426,8 @@ static int vcpu_loop(void)
 				}
 				else // Child
 				{
-					uhyve_fork();
+					args->ret = 0;
+					uhyve_init_fork();
 					cpuid = 0;
 					vcpu_init_with_state(state[0]);
 
@@ -1943,11 +1949,10 @@ int uhyve_init(char** argv)
 	return ret;
 }
 
-int uhyve_fork()
+int uhyve_init_fork()
 {
 	atexit(uhyve_atexit);
 
-	close(kvm);
 	kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
 	if (kvm < 0)
 		err(1, "Could not open: /dev/kvm");
@@ -2041,12 +2046,8 @@ int uhyve_fork()
 
 	pthread_barrier_init(&barrier, NULL, ncores);
 
-	cpuid = 0;
-
 	// create first CPU, it will be the boot processor by default
-	int ret = vcpu_init();
-
-	return ret;
+	// Postponed to next func
 }
 
 struct vcpu_state get_vcpu_state(int vcpufd) {
