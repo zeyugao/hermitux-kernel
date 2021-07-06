@@ -210,6 +210,12 @@ struct vcpu_state {
 	struct kvm_vcpu_events events;
 };
 
+int uhyve_init_fork();
+static int vcpu_init_with_state(struct vcpu_state state);
+int uhyve_loop_with_state_fork(struct vcpu_state *state);
+void set_vcpu_state(int vcpufd, struct vcpu_state state);
+struct vcpu_state get_vcpu_state(int vcpufd);
+
 size_t guest_size = 0x20000000ULL;
 uint8_t* guest_mem = NULL;
 
@@ -1412,7 +1418,6 @@ static int vcpu_loop(void)
 				int ret = fork();
 				printf("ret = %d\n", ret);
 
-				int ret;
 				unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
 				uhyve_fork_t *args = (uhyve_fork_t *) (guest_mem+data);
 
@@ -2050,7 +2055,8 @@ int uhyve_init_fork()
 	// Postponed to next func
 }
 
-struct vcpu_state get_vcpu_state(int vcpufd) {
+struct vcpu_state get_vcpu_state(int vcpufd)
+{
 	struct vcpu_state state;
 
 	kvm_ioctl(vcpufd, KVM_GET_SREGS, &state.sregs);
@@ -2066,7 +2072,8 @@ struct vcpu_state get_vcpu_state(int vcpufd) {
 	return state;
 }
 
-void set_vcpu_state(int vcpufd, struct vcpu_state state) {
+void set_vcpu_state(int vcpufd, struct vcpu_state state)
+{
 	kvm_ioctl(vcpufd, KVM_SET_SREGS, &state.sregs);
 	kvm_ioctl(vcpufd, KVM_SET_REGS, &state.regs);
 	kvm_ioctl(vcpufd, KVM_SET_MSRS, &state.msr_data);
@@ -2078,7 +2085,8 @@ void set_vcpu_state(int vcpufd, struct vcpu_state state) {
 	kvm_ioctl(vcpufd, KVM_SET_VCPU_EVENTS, &state.events);
 }
 
-static int vcpu_init_with_state(struct vcpu_state state){
+static int vcpu_init_with_state(struct vcpu_state state)
+{
 	vcpu_fds[cpuid] = vcpufd = kvm_ioctl(vmfd, KVM_CREATE_VCPU, cpuid);
 
 	/* Map the shared kvm_run structure and following data. */
