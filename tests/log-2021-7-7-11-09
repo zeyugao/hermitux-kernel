@@ -1,0 +1,564 @@
+sudo HERMIT_ISLE=uhyve HERMIT_TUX=1 HERMIT_VERBOSE=1 \
+	../tools/build/proxy \
+	../build/local_prefix/home/elsa/Code/hermitux-kernel/prefix/x86_64-hermit/extra/tests/hermitux \
+	1.out
+ioctl KVM_GET_API_VERSION ret = 12
+ioctl KVM_CREATE_VM ret = 4
+ioctl KVM_SET_IDENTITY_MAP_ADDR ret = 0
+ioctl KVM_SET_TSS_ADDR ret = 0
+ioctl KVM_SET_USER_MEMORY_REGION ret = 0
+ioctl KVM_CREATE_IRQCHIP ret = 0
+ioctl KVM_ENABLE_CAP ret = 0
+ioctl KVM_GET_IRQCHIP ret = 0
+ioctl KVM_SET_IRQCHIP ret = 0
+ioctl KVM_CHECK_EXTENSION ret = 1
+ioctl KVM_CHECK_EXTENSION ret = 1
+ioctl KVM_CHECK_EXTENSION ret = 2
+ioctl KVM_CHECK_EXTENSION ret = 1
+ioctl KVM_CHECK_EXTENSION ret = 1
+Uhyve's elf loader starts, considering: 1.out
+Uhyve's elf loader found entry point at 0x401c10 in file 1.out
+ioctl KVM_CREATE_VCPU ret = 5
+ioctl KVM_GET_VCPU_MMAP_SIZE ret = 12288
+ioctl KVM_GET_SUPPORTED_CPUID ret = 0
+ioctl KVM_SET_CPUID2 ret = 0
+ioctl KVM_SET_MP_STATE ret = 0
+ioctl KVM_SET_MSRS ret = 1
+ioctl KVM_GET_SREGS ret = 0
+ioctl KVM_SET_SREGS ret = 0
+ioctl KVM_SET_REGS ret = 0
+ncores = 1
+UHYVE_PORT_FORK: Hypervisor fork
+UHYVE_PORT_FORK: Old cpu id = 5
+UHYVE_PORT_FORK: Get state from fd = 5
+ioctl KVM_GET_SREGS ret = 0
+ioctl KVM_GET_REGS ret = 0
+ioctl KVM_GET_MSRS ret = 0
+ioctl KVM_GET_XCRS ret = 0
+ioctl KVM_GET_MP_STATE ret = 0
+ioctl KVM_GET_LAPIC ret = 0
+ioctl KVM_GET_FPU ret = 0
+ioctl KVM_GET_XSAVE ret = 0
+ioctl KVM_GET_VCPU_EVENTS ret = 0
+UHYVE_PORT_FORK: ret = 3251
+UHYVE_PORT_FORK: ret = 0
+UHYVE_PORT_FORK: ret = 3251, data offset = 9274892
+UHYVE_PORT_FORK: I'm parent
+UHYVE_PORT_FORK: ret = 0, data offset = 9274892
+UHYVE_PORT_FORK: I'm child
+uhyve_init_fork
+print_registers
+ioctl KVM_GET_SREGS ret = 0
+ioctl KVM_GET_REGS ret = 0
+
+ Dump state of CPU 0
+
+ Registers:
+ ----------
+ rip: 0000000000243a35   rsp: 0000000000a1e5f0 flags: 0000000000001206
+ rax: 00000000008d860c   rbx: 0000000000a1e670   rcx: 0000000000000a1e
+ rdx: 0000000000000533   rsi: 0000000000000000   rdi: 000000000000060c
+ rbp: 0a7c5ac471b47843    r8: 0000000000000000    r9: 0000000000000000
+ r10: 0000000000000001   r11: 0000000000000000   r12: 20c49ba5e353f7cf
+ r13: 28f5c28f5c28f5c3   r14: 00000000004c1018   r15: 00000000000c0308
+ cr0: 0000000080040033   cr2: 00000000004ca008   cr3: 0000000000201001
+ cr4: 00000000000506e0   cr8: 0000000000000000
+
+ Segment registers:
+ ------------------
+ register  selector  base              limit     type  p dpl db s l g avl
+ cs        0008      0000000000000000  ffffffff  0b    1 0   0  1 1 1 0
+ ss        0010      0000000000000000  ffffffff  03    1 0   1  1 0 1 0
+ ds        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ es        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ fs        0000      00000000004cb880  ffffffff  00    0 0   1  0 0 1 0
+ gs        0000      0000000000000000  ffffffff  00    0 0   1  0 0 1 0
+ tr        0038      00000000003b7000  00000068  0b    1 0   0  0 0 0 0
+ ldt       0000      0000000000000000  0000ffff  02    1 0   0  0 0 0 0
+ gdt                 00000000003b8a00  00000437
+ idt                 00000000003b8e60  00000fff
+
+ APIC:
+ -----
+ efer: 0000000000000d01  apic base: 00000000fee00d00
+
+ Interrupt bitmap:
+ -----------------
+ 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+UHYVE_PORT_FORK: Parent end
+ioctl KVM_CREATE_VM ret = 7
+KVM_CREATE_VM fd = 7
+ioctl KVM_SET_IDENTITY_MAP_ADDR ret = 0
+ioctl KVM_SET_TSS_ADDR ret = 0
+ioctl KVM_SET_USER_MEMORY_REGION ret = 0
+ioctl KVM_CREATE_IRQCHIP ret = 0
+ioctl KVM_ENABLE_CAP ret = 0
+ioctl KVM_GET_IRQCHIP ret = 0
+ioctl KVM_SET_IRQCHIP ret = 0
+ioctl KVM_CHECK_EXTENSION ret = 1
+ioctl KVM_CHECK_EXTENSION ret = 1
+ioctl KVM_CHECK_EXTENSION ret = 2
+ioctl KVM_CHECK_EXTENSION ret = 1
+ioctl KVM_CHECK_EXTENSION ret = 1
+uhyve_init_fork end
+vcpu_init_with_state
+ioctl KVM_CREATE_VCPU ret = 8
+prog: Parent 3251
+KVM_CREATE_VCPU
+ioctl KVM_GET_VCPU_MMAP_SIZE ret = 12288
+KVM_GET_VCPU_MMAP_SIZE = 12288
+
+uhyve_atexit Dump kernel log:
+================
+cpuid level 22
+CPU vendor: GenuineIntel
+Processor: 
+Paging features: PSE (2/4Mb) PAE PGE PAT PSE36 NX PSE (1Gb) LM
+Physical adress-width: 39 bits
+Linear adress-width: 48 bits
+Sysenter instruction: available
+Syscall instruction: available
+Set XCR0 to 0x7
+[0.000][0:0][INFO] Core 0 set per_core offset to 0x0
+[0.000][0:0][INFO] Core id is set to 0
+[0.000][0:0][INFO] Found and initialized FPU!
+[0.000][0:0][INFO] CPU features: SSE SSE2 SSE3 SSE4.1 SSE4.2 AVX AVX2 RDRAND FMA MOVBE X2APIC MCE FPU FXSR XSAVE OSXSAVE VMX RDTSCP FSGSBASE CLFLUSH BMI1 BMI2 CLFLUSHOPT 
+[0.000][0:0][INFO] Ext_Save_Area_2: offset 576, size 256
+[0.000][0:0][INFO] Ext_Save_Area_3: offset 0, size 0
+[0.000][0:0][INFO] Ext_Save_Area_4: offset 0, size 0
+[0.000][0:0][INFO] HermitCore is running on a hypervisor!
+[0.000][0:0][INFO] Hypervisor Vendor Id: KVMKVMKVM
+[0.000][0:0][INFO] Maximum input value for hypervisor: 0x40000001
+[0.000][0:0][INFO] CR0 0x80040033, CR4 0x506e0
+[0.000][0:0][INFO] size of xsave_t: 1040
+[0.000][0:0][INFO] IA32_MISC_ENABLE 0x1
+[0.000][0:0][INFO] IA32_PLATFORM_ID 0x0
+[0.000][0:0][INFO] IA32_CR_PAT 0x7040600070406
+[0.000][0:0][INFO] PAT use per default writeback.
+[0.000][0:0][INFO] MTRR is disabled.
+[0.000][0:0][INFO] Fixed-range MTRR is disabled.
+[0.000][0:0][INFO] MTRR used per default NO writeback!
+[0.000][0:0][INFO] mb_info: 0x0
+[0.000][0:0][INFO] memory_init: base 0x200000, image_size 0x1ea8c0, limit 0x20000000
+[0.000][0:0][INFO] tux_start_address: 0x400000, tux_size: 0xc5090
+[0.000][0:0][INFO] Found linux ap at 0x400000 with a size of 0xc5090
+[0.000][0:0][INFO] check mapping: 0x400000 == 0x400000
+[0.000][0:0][INFO] free list starts at 0x4c7000, limit 0x20000000
+[0.000][0:0][INFO] vma_init: reserve vma region 0x200000 - 0x400000
+[0.000][0:0][INFO] VMAs:
+[0.000][0:0][INFO] 0xc0000 - 0xd0000: size=0x10000, flags=rw-
+[0.000][0:0][INFO] 0x200000 - 0x400000: size=0x200000, flags=rwx
+[0.000][0:0][INFO] 0x400000 - 0x4c6000: size=0xc6000, flags=rwx
+[0.000][0:0][INFO] 0x4ca000 - 0x5ca000: size=0x100000, flags=--- (uncached)
+[0.000][0:0][INFO] Initialized the task state segments
+[0.000][0:0][INFO] Didn't find MP config table
+[0.000][0:0][INFO] Found APIC at 0xfee00000
+[0.000][0:0][INFO] Found and enable X2APIC
+[0.000][0:0][INFO] Maximum LVT Entry: 0x5
+[0.000][0:0][INFO] APIC Version: 0x14
+[0.000][0:0][INFO] EOI-broadcast: unavailable
+[0.000][0:0][INFO] Boot processor 0
+[0.000][0:0][INFO] APIC calibration determined an ICR of 0x89fbd4
+[0.000][0:0][INFO] Disable PIC
+[0.000][0:0][INFO] This is HermiTux 0.2.6, build date 3324532
+[0.000][0:0][INFO] Isle 0 of 1 possible isles
+[0.000][0:0][INFO] Kernel starts at 0x200000 and ends at 0x3ea8c0
+[0.000][0:0][INFO] TLS image starts at 0x334fc0 and ends at 0x334fc0 (size 0x0)
+[0.000][0:0][INFO] BBS starts at 0x334fc0 and ends at 0x3ea8c0
+[0.000][0:0][INFO] Per core data starts at 0x333fc0 and ends at 0x334fc0
+[0.000][0:0][INFO] Per core size 0x40
+[0.000][0:0][INFO] Processor frequency: 1800 MHz
+[0.000][0:0][INFO] Total memory: 510 MiB
+[0.000][0:0][INFO] Current allocated memory: 6500 KiB
+[0.000][0:0][INFO] Current available memory: 503 MiB
+[0.000][0:0][INFO] Core 0 is the boot processor
+[0.000][0:0][INFO] System is able to use 1 processors
+[0.000][0:0][INFO] CPU 0 of isle 0 is now online (CR0 0x8004003b, CR4 0x506e0)
+[0.000][0:0][INFO] Task 1 uses memory region [0x99f000 - 0xa1efff] as stack
+[0.000][0:0][INFO] Task 1 uses memory region [0xa21000 - 0xa22fff] as IST1
+[0.000][0:0][INFO] start new task 1 on core 0 with stack address 0x99f000
+[0.000][0:1][INFO] Initd is running
+[0.000][0:1][INFO] Task 2 uses memory region [0xa25000 - 0xaa4fff] as stack
+[0.000][0:1][INFO] Task 2 uses memory region [0xaa7000 - 0xaa8fff] as IST1
+[0.000][0:1][INFO] start new task 2 on core 0 with stack address 0xa25000
+[0.000][0:1][INFO] sys_thread_new: create_kernel_task err 0, id = 2, prio = 16
+[0.000][0:2][INFO] LwIP's tcpip thread has task id 2
+[0.000][0:1][INFO] TCP/IP initialized.
+[0.000][0:1][INFO] HermitCore is running on uhyve!
+[0.000][0:1][INFO] Boot time: 0 ms
+[0.000][0:1][ERROR] irq_handler rip=3241563, int_no=14
+[0.000][0:1][ERROR] irq_handler rip=3235462, int_no=7
+[0.000][0:1][INFO] Caught syscall 158 (arch_prctl) 0x34000000340:0x100d000
+[0.000][0:1][ERROR] arch_prctl: unknown option 0x3001
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0x31:0x11c0
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0:0x11c0
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 158 (arch_prctl) 0:0x880
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 63 (uname) 0xcdcdcdcdcdcdcdcd:0x400518
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 89 ((null)) 0xcdcdcdcdcdcdcdcd:0x400518
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0xcdcdcdcdcdcdcdcd:0x21000
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0x4cc1c0:0xe40
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 10 ((null)) 0x5b0000006e:0x4c2220
+[0.000][0:1][WARNING] mprotect: unsupported syscall, faking success, addr: 0x4be000, len: 0x3000, prot: 1
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 56 ((null)) 0xa1e677:0x400518
+[0.000][0:1][INFO] fork
+[0.000][0:1][INFO] fork end ret = 3251
+[0.000][0:1][INFO] sys_clone returned, rax = cb3
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 5 ((null)) 0:0x4c2fe0
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 1 (write) 0:0x12
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 231 (exit_group) 0:0x4c32d0
+
+
+Finished Dump kernel log:
+================
+Load elf file at 0x400000, file size 0x518, memory size 0x518
+Load elf file at 0x401000, file size 0x94391, memory size 0x94391
+Load elf file at 0x496000, file size 0x268b8, memory size 0x268b8
+Load elf file at 0x4be0a0, file size 0x5230, memory size 0x6ff0
+uhyve is entering vcpu_loop
+ioctl KVM_GET_SUPPORTED_CPUID ret = 0
+ioctl KVM_SET_CPUID2 ret = 0
+
+ Dump state of CPU 0
+
+ Registers:
+ ----------
+ rip: 0000000000243a35   rsp: 0000000000a1e5f0 flags: 0000000000001206
+ rax: 00000000008d860c   rbx: 0000000000a1e670   rcx: 0000000000000a1e
+ rdx: 0000000000000533   rsi: 0000000000000000   rdi: 000000000000060c
+ rbp: 0a7c5ac471b47843    r8: 0000000000000000    r9: 0000000000000000
+ r10: 0000000000000001   r11: 0000000000000000   r12: 20c49ba5e353f7cf
+ r13: 28f5c28f5c28f5c3   r14: 00000000004c1018   r15: 00000000000c0308
+ cr0: 0000000080040033   cr2: 00000000004ca008   cr3: 0000000000201001
+ cr4: 00000000000506e0   cr8: 0000000000000000
+
+ Segment registers:
+ ------------------
+ register  selector  base              limit     type  p dpl db s l g avl
+ cs        0008      0000000000000000  ffffffff  0b    1 0   0  1 1 1 0
+ ss        0010      0000000000000000  ffffffff  03    1 0   1  1 0 1 0
+ ds        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ es        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ fs        0000      00000000004cb880  ffffffff  00    0 0   1  0 0 1 0
+ gs        0000      0000000000000000  ffffffff  00    0 0   1  0 0 1 0
+ tr        0038      00000000003b7000  00000068  0b    1 0   0  0 0 0 0
+ ldt       0000      0000000000000000  0000ffff  02    1 0   0  0 0 0 0
+ gdt                 00000000003b8a00  00000437
+ idt                 00000000003b8e60  00000fff
+
+ APIC:
+ -----
+ efer: 0000000000000d01  apic base: 00000000fee00d00
+
+ Interrupt bitmap:
+ -----------------
+ 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+ioctl KVM_SET_SREGS ret = 0
+ioctl KVM_SET_REGS ret = 0
+ioctl KVM_SET_MSRS ret = 0
+ioctl KVM_SET_XCRS ret = 0
+ioctl KVM_SET_MP_STATE ret = 0
+ioctl KVM_SET_LAPIC ret = 0
+ioctl KVM_SET_FPU ret = 0
+ioctl KVM_SET_XSAVE ret = 0
+ioctl KVM_SET_VCPU_EVENTS ret = 0
+vcpu_init_with_state end
+UHYVE_PORT_FORK: New cpu id = 8
+print_registers
+ioctl KVM_GET_SREGS ret = 0
+ioctl KVM_GET_REGS ret = 0
+
+ Dump state of CPU 0
+
+ Registers:
+ ----------
+ rip: 0000000000243a35   rsp: 0000000000a1e5f0 flags: 0000000000001206
+ rax: 00000000008d860c   rbx: 0000000000a1e670   rcx: 0000000000000a1e
+ rdx: 0000000000000533   rsi: 0000000000000000   rdi: 000000000000060c
+ rbp: 0a7c5ac471b47843    r8: 0000000000000000    r9: 0000000000000000
+ r10: 0000000000000001   r11: 0000000000000000   r12: 20c49ba5e353f7cf
+ r13: 28f5c28f5c28f5c3   r14: 00000000004c1018   r15: 00000000000c0308
+ cr0: 0000000080040033   cr2: 00000000004ca008   cr3: 0000000000201001
+ cr4: 00000000000506e0   cr8: 0000000000000000
+
+ Segment registers:
+ ------------------
+ register  selector  base              limit     type  p dpl db s l g avl
+ cs        0008      0000000000000000  ffffffff  0b    1 0   0  1 1 1 0
+ ss        0010      0000000000000000  ffffffff  03    1 0   1  1 0 1 0
+ ds        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ es        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ fs        0000      00000000004cb880  ffffffff  00    0 0   0  0 0 0 0
+ gs        0000      0000000000000000  ffffffff  00    0 0   0  0 0 0 0
+ tr        0038      00000000003b7000  00000068  0b    1 0   0  0 0 0 0
+ ldt       0000      0000000000000000  0000ffff  02    1 0   0  0 0 0 0
+ gdt                 00000000003b8a00  00000437
+ idt                 00000000003b8e60  00000fff
+
+ APIC:
+ -----
+ efer: 0000000000000d01  apic base: 00000000fee00d00
+
+ Interrupt bitmap:
+ -----------------
+ 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+uhyve_loop_with_state_fork
+pthread_self = 0x20ae8c0
+vcpu_loop
+vcpu_loop_fork
+ncores = 1
+print_registers
+ioctl KVM_GET_SREGS ret = 0
+ioctl KVM_GET_REGS ret = 0
+
+ Dump state of CPU 0
+
+ Registers:
+ ----------
+ rip: 0000000000243a35   rsp: 0000000000a1e5f0 flags: 0000000000001206
+ rax: 00000000008d860c   rbx: 0000000000a1e670   rcx: 0000000000000a1e
+ rdx: 0000000000000533   rsi: 0000000000000000   rdi: 000000000000060c
+ rbp: 0a7c5ac471b47843    r8: 0000000000000000    r9: 0000000000000000
+ r10: 0000000000000001   r11: 0000000000000000   r12: 20c49ba5e353f7cf
+ r13: 28f5c28f5c28f5c3   r14: 00000000004c1018   r15: 00000000000c0308
+ cr0: 0000000080040033   cr2: 00000000004ca008   cr3: 0000000000201001
+ cr4: 00000000000506e0   cr8: 0000000000000000
+
+ Segment registers:
+ ------------------
+ register  selector  base              limit     type  p dpl db s l g avl
+ cs        0008      0000000000000000  ffffffff  0b    1 0   0  1 1 1 0
+ ss        0010      0000000000000000  ffffffff  03    1 0   1  1 0 1 0
+ ds        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ es        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ fs        0000      00000000004cb880  000fffff  00    0 0   0  0 0 0 0
+ gs        0000      0000000000000000  000fffff  00    0 0   0  0 0 0 0
+ tr        0038      00000000003b7000  00000068  0b    1 0   0  0 0 0 0
+ ldt       0000      0000000000000000  0000ffff  02    1 0   0  0 0 0 0
+ gdt                 00000000003b8a00  00000437
+ idt                 00000000003b8e60  00000fff
+
+ APIC:
+ -----
+ efer: 0000000000000d01  apic base: 00000000fee00d00
+
+ Interrupt bitmap:
+ -----------------
+ 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+ioctl ret = 0
+exit reason = 0x2
+forked port 0x533
+print_registers
+ioctl KVM_GET_SREGS ret = 0
+ioctl KVM_GET_REGS ret = 0
+
+ Dump state of CPU 0
+
+ Registers:
+ ----------
+ rip: 000000000023ba1c   rsp: 0000000000a22d88 flags: 0000000000001006
+ rax: 00000000008dbe78   rbx: 0000000000a22f28   rcx: 0000000000000000
+ rdx: 0000000000000518   rsi: 8000000000000fff   rdi: 0000000000000a22
+ rbp: 00000000004ca000    r8: 0000000000000000    r9: 0000000000000055
+ r10: 00000000004ee000   r11: 0000000000000030   r12: 0000000000000000
+ r13: 00000000004ee000   r14: 0000000000001246   r15: 0000000000496004
+ cr0: 0000000080040033   cr2: 0000000000000000   cr3: 0000000000201001
+ cr4: 00000000000506e0   cr8: 0000000000000000
+
+ Segment registers:
+ ------------------
+ register  selector  base              limit     type  p dpl db s l g avl
+ cs        0008      0000000000000000  00000000  0b    1 0   0  1 1 0 0
+ ss        0008      0000000000000000  ffffffff  03    1 0   1  1 0 1 0
+ ds        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ es        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ fs        0000      00000000004cb880  000fffff  00    0 0   0  0 0 0 0
+ gs        0000      0000000000000000  000fffff  00    0 0   0  0 0 0 0
+ tr        0038      00000000003b7000  00000068  0b    1 0   0  0 0 0 0
+ ldt       0000      0000000000000000  0000ffff  02    1 0   0  0 0 0 0
+ gdt                 00000000003b8a00  00000437
+ idt                 00000000003b8e60  00000fff
+
+ APIC:
+ -----
+ efer: 0000000000000d01  apic base: 00000000fee00d00
+
+ Interrupt bitmap:
+ -----------------
+ 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+ioctl ret = 0
+exit reason = 0x2
+forked port 0x518
+run print_registers
+print_registers
+ioctl KVM_GET_SREGS ret = 0
+ioctl KVM_GET_REGS ret = 0
+
+ Dump state of CPU 0
+
+ Registers:
+ ----------
+ rip: 000000000023ba1c   rsp: 0000000000a22d88 flags: 0000000000001006
+ rax: 00000000008dbe78   rbx: 0000000000a22f28   rcx: 0000000000000000
+ rdx: 0000000000000518   rsi: 8000000000000fff   rdi: 0000000000000a22
+ rbp: 00000000004ca000    r8: 0000000000000000    r9: 0000000000000055
+ r10: 00000000004ee000   r11: 0000000000000030   r12: 0000000000000000
+ r13: 00000000004ee000   r14: 0000000000001246   r15: 0000000000496004
+ cr0: 0000000080040033   cr2: 0000000000000000   cr3: 0000000000201001
+ cr4: 00000000000506e0   cr8: 0000000000000000
+
+ Segment registers:
+ ------------------
+ register  selector  base              limit     type  p dpl db s l g avl
+ cs        0008      0000000000000000  00000000  0b    1 0   0  1 1 0 0
+ ss        0008      0000000000000000  ffffffff  03    1 0   1  1 0 1 0
+ ds        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ es        0010      0000000000000000  00000000  03    1 0   0  1 1 0 0
+ fs        0000      00000000004cb880  000fffff  00    0 0   0  0 0 0 0
+ gs        0000      0000000000000000  000fffff  00    0 0   0  0 0 0 0
+ tr        0038      00000000003b7000  00000068  0b    1 0   0  0 0 0 0
+ ldt       0000      0000000000000000  0000ffff  02    1 0   0  0 0 0 0
+ gdt                 00000000003b8a00  00000437
+ idt                 00000000003b8e60  00000fff
+
+ APIC:
+ -----
+ efer: 0000000000000d01  apic base: 00000000fee00d00
+
+ Interrupt bitmap:
+ -----------------
+ 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+GUEST PAGE FAULT @0x0 (RIP @0x0)
+addr2line -a 0 -e ../build/local_prefix/home/elsa/Code/hermitux-kernel/prefix/x86_64-hermit/extra/tests/hermitux
+
+
+uhyve_atexit Dump kernel log:
+================
+cpuid level 22
+CPU vendor: GenuineIntel
+Processor: 
+Paging features: PSE (2/4Mb) PAE PGE PAT PSE36 NX PSE (1Gb) LM
+Physical adress-width: 39 bits
+Linear adress-width: 48 bits
+Sysenter instruction: available
+Syscall instruction: available
+Set XCR0 to 0x7
+[0.000][0:0][INFO] Core 0 set per_core offset to 0x0
+[0.000][0:0][INFO] Core id is set to 0
+[0.000][0:0][INFO] Found and initialized FPU!
+[0.000][0:0][INFO] CPU features: SSE SSE2 SSE3 SSE4.1 SSE4.2 AVX AVX2 RDRAND FMA MOVBE X2APIC MCE FPU FXSR XSAVE OSXSAVE VMX RDTSCP FSGSBASE CLFLUSH BMI1 BMI2 CLFLUSHOPT 
+[0.000][0:0][INFO] Ext_Save_Area_2: offset 576, size 256
+[0.000][0:0][INFO] Ext_Save_Area_3: offset 0, size 0
+[0.000][0:0][INFO] Ext_Save_Area_4: offset 0, size 0
+[0.000][0:0][INFO] HermitCore is running on a hypervisor!
+[0.000][0:0][INFO] Hypervisor Vendor Id: KVMKVMKVM
+[0.000][0:0][INFO] Maximum input value for hypervisor: 0x40000001
+[0.000][0:0][INFO] CR0 0x80040033, CR4 0x506e0
+[0.000][0:0][INFO] size of xsave_t: 1040
+[0.000][0:0][INFO] IA32_MISC_ENABLE 0x1
+[0.000][0:0][INFO] IA32_PLATFORM_ID 0x0
+[0.000][0:0][INFO] IA32_CR_PAT 0x7040600070406
+[0.000][0:0][INFO] PAT use per default writeback.
+[0.000][0:0][INFO] MTRR is disabled.
+[0.000][0:0][INFO] Fixed-range MTRR is disabled.
+[0.000][0:0][INFO] MTRR used per default NO writeback!
+[0.000][0:0][INFO] mb_info: 0x0
+[0.000][0:0][INFO] memory_init: base 0x200000, image_size 0x1ea8c0, limit 0x20000000
+[0.000][0:0][INFO] tux_start_address: 0x400000, tux_size: 0xc5090
+[0.000][0:0][INFO] Found linux ap at 0x400000 with a size of 0xc5090
+[0.000][0:0][INFO] check mapping: 0x400000 == 0x400000
+[0.000][0:0][INFO] free list starts at 0x4c7000, limit 0x20000000
+[0.000][0:0][INFO] vma_init: reserve vma region 0x200000 - 0x400000
+[0.000][0:0][INFO] VMAs:
+[0.000][0:0][INFO] 0xc0000 - 0xd0000: size=0x10000, flags=rw-
+[0.000][0:0][INFO] 0x200000 - 0x400000: size=0x200000, flags=rwx
+[0.000][0:0][INFO] 0x400000 - 0x4c6000: size=0xc6000, flags=rwx
+[0.000][0:0][INFO] 0x4ca000 - 0x5ca000: size=0x100000, flags=--- (uncached)
+[0.000][0:0][INFO] Initialized the task state segments
+[0.000][0:0][INFO] Didn't find MP config table
+[0.000][0:0][INFO] Found APIC at 0xfee00000
+[0.000][0:0][INFO] Found and enable X2APIC
+[0.000][0:0][INFO] Maximum LVT Entry: 0x5
+[0.000][0:0][INFO] APIC Version: 0x14
+[0.000][0:0][INFO] EOI-broadcast: unavailable
+[0.000][0:0][INFO] Boot processor 0
+[0.000][0:0][INFO] APIC calibration determined an ICR of 0x89fbd4
+[0.000][0:0][INFO] Disable PIC
+[0.000][0:0][INFO] This is HermiTux 0.2.6, build date 3324532
+[0.000][0:0][INFO] Isle 0 of 1 possible isles
+[0.000][0:0][INFO] Kernel starts at 0x200000 and ends at 0x3ea8c0
+[0.000][0:0][INFO] TLS image starts at 0x334fc0 and ends at 0x334fc0 (size 0x0)
+[0.000][0:0][INFO] BBS starts at 0x334fc0 and ends at 0x3ea8c0
+[0.000][0:0][INFO] Per core data starts at 0x333fc0 and ends at 0x334fc0
+[0.000][0:0][INFO] Per core size 0x40
+[0.000][0:0][INFO] Processor frequency: 1800 MHz
+[0.000][0:0][INFO] Total memory: 510 MiB
+[0.000][0:0][INFO] Current allocated memory: 6500 KiB
+[0.000][0:0][INFO] Current available memory: 503 MiB
+[0.000][0:0][INFO] Core 0 is the boot processor
+[0.000][0:0][INFO] System is able to use 1 processors
+[0.000][0:0][INFO] CPU 0 of isle 0 is now online (CR0 0x8004003b, CR4 0x506e0)
+[0.000][0:0][INFO] Task 1 uses memory region [0x99f000 - 0xa1efff] as stack
+[0.000][0:0][INFO] Task 1 uses memory region [0xa21000 - 0xa22fff] as IST1
+[0.000][0:0][INFO] start new task 1 on core 0 with stack address 0x99f000
+[0.000][0:1][INFO] Initd is running
+[0.000][0:1][INFO] Task 2 uses memory region [0xa25000 - 0xaa4fff] as stack
+[0.000][0:1][INFO] Task 2 uses memory region [0xaa7000 - 0xaa8fff] as IST1
+[0.000][0:1][INFO] start new task 2 on core 0 with stack address 0xa25000
+[0.000][0:1][INFO] sys_thread_new: create_kernel_task err 0, id = 2, prio = 16
+[0.000][0:2][INFO] LwIP's tcpip thread has task id 2
+[0.000][0:1][INFO] TCP/IP initialized.
+[0.000][0:1][INFO] HermitCore is running on uhyve!
+[0.000][0:1][INFO] Boot time: 0 ms
+[0.000][0:1][ERROR] irq_handler rip=3241563, int_no=14
+[0.000][0:1][ERROR] irq_handler rip=3235462, int_no=7
+[0.000][0:1][INFO] Caught syscall 158 (arch_prctl) 0x34000000340:0x100d000
+[0.000][0:1][ERROR] arch_prctl: unknown option 0x3001
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0x31:0x11c0
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0:0x11c0
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 158 (arch_prctl) 0:0x880
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 63 (uname) 0xcdcdcdcdcdcdcdcd:0x400518
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 89 ((null)) 0xcdcdcdcdcdcdcdcd:0x400518
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0xcdcdcdcdcdcdcdcd:0x21000
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 12 (brk) 0x4cc1c0:0xe40
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 10 ((null)) 0x5b0000006e:0x4c2220
+[0.000][0:1][WARNING] mprotect: unsupported syscall, faking success, addr: 0x4be000, len: 0x3000, prot: 1
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][INFO] Caught syscall 56 ((null)) 0xa1e677:0x400518
+[0.000][0:1][INFO] fork
+[0.000][0:1][INFO] fork end ret = 0
+[0.000][0:1][INFO] sys_clone returned, rax = 0
+[0.000][0:1][INFO] syscall finished
+[0.000][0:1][ERROR] irq_handler rip=0, int_no=14
+[0.000][0:1][ERROR] Page Fault Exception (14) on core 0 at cs:ip = 0:0, fs = 0x4cb880, gs = 0, rflags 0x11246, task = 1, addr = 0, error = 0x10 [ supervisor instruction fetch not present  ]
+[0.000][0:1][ERROR] rax 0x5, rbx 0x4c2fe0, rcx 0x450b89, rdx 0xa1e5a0, rbp 0x4c1320, rsp 0xa1e598 rdi 0x1, rsi 0xa1e5a0, r8 0x1, r9 0x4cb880, r10 0x4cbb50, r11 0x1246, r12 0x496004, r13 0x768, r14 0xb, r15 0x4c2b60
+[0.000][0:1][ERROR] Heap 0x4ca000 - 0x4ee000
+
+
+Finished Dump kernel log:
+================
+Load elf file at 0x400000, file size 0x518, memory size 0x518
+Load elf file at 0x401000, file size 0x94391, memory size 0x94391
+Load elf file at 0x496000, file size 0x268b8, memory size 0x268b8
+Load elf file at 0x4be0a0, file size 0x5230, memory size 0x6ff0
+uhyve is entering vcpu_loop
+uhyve is entering vcpu_loop
