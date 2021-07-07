@@ -178,7 +178,10 @@ static int wait_for_connect()
         return -1;
     }
 
+    printf("Listen at port = %d\n", portno);
+
     warnx("Waiting for a debugger, see tools/hermitux-gdb for info.");
+    portno = portno + 1;
 
     len = sizeof(client_addr);
     socket_fd = accept(listen_socket_fd, (struct sockaddr *)&client_addr, &len);

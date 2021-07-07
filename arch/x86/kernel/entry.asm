@@ -464,7 +464,7 @@ extern syscall_handler
 
 global isyscall
 isyscall:
-    cli
+    cli ; Clear interrupt flag; interrupts disabled when interrupt flag cleared.
     push rax
     push rcx
     push rdx
@@ -489,12 +489,12 @@ isyscall:
 
     ; set pointer at "struct state" as first argument
     mov rdi, rsp
-    sti
+    sti ; Set interrupt flag; interrupts disabled when interrupt flag cleared.
 
     extern syscall_handler
     call syscall_handler
 
-    cli
+    cli ; Clear interrupt flag; interrupts disabled when interrupt flag cleared.
     ;swapgs ; Pierre: I think this is not needed
     add rsp, 16
     pop r15

@@ -111,6 +111,7 @@ static void init_syscalls_names() {
 	syscalls_names[12] = "brk";
 	syscalls_names[16] = "ioctl";
 	syscalls_names[20] = "writev";
+	syscalls_names[56] = "fork";
 	syscalls_names[63] = "uname";
 	syscalls_names[158] = "arch_prctl";
 	syscalls_names[218] = "set_tid_address";
@@ -256,9 +257,23 @@ static void static_syscall_handler(struct state *s)
         }
 }
 
+void print_state(struct state *s)
+{
+	LOG_INFO(" ----------\n");
+	LOG_INFO(" Dump state of CPU Registers\n");
+	LOG_INFO(" rip: %016zx   rsp: %016zx flags: %016zx\n", s->rip, s->rsp, s->rflags);
+	LOG_INFO(" rax: %016zx   rbx: %016zx   rcx: %016zx\n", s->rax, s->rbx, s->rcx);
+	LOG_INFO(" rdx: %016zx   rsi: %016zx   rdi: %016zx\n", s->rdx, s->rsi, s->rdi);
+	LOG_INFO(" rbp: %016zx    r8: %016zx    r9: %016zx\n", s->rbp, s->r8,  s->r9);
+	LOG_INFO(" r10: %016zx   r11: %016zx   r12: %016zx\n", s->r10, s->r11, s->r12);
+	LOG_INFO(" r13: %016zx   r14: %016zx   r15: %016zx\n", s->r13, s->r14, s->r15);
+	LOG_INFO(" ----------\n");
+}
+
 void syscall_handler(struct state *s)
 {
 	LOG_INFO("Caught syscall %d (%s) %#lx:%#lx\n", s->rax, syscalls_names[s->rax]);
+	// 后面两个会继续读下去，读到栈上面的一些东西
 
 	switch(s->rax) {
 
@@ -577,8 +592,10 @@ void syscall_handler(struct state *s)
 #ifndef DISABLE_SYS_CLONE
 		case 56:
 			/* clone */
+			print_state(s);
 			s->rax = sys_clone(s->rdi, (void *)s->rsi, (int *)s->rdx,
                     (int *)s->r10, (void *)s->r8, s);
+			print_state(s);
 			LOG_INFO("sys_clone returned, rax = %lx\n", s->rax);
 			break;
 #endif /* DISABLE_SYS_CLONE */
