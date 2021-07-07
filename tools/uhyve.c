@@ -215,7 +215,6 @@ static int vcpu_init_with_state(struct vcpu_state state);
 int uhyve_loop_with_state_fork(struct vcpu_state *state);
 void set_vcpu_state(int vcpufd, struct vcpu_state state);
 struct vcpu_state get_vcpu_state(int vcpufd);
-void debug_regs(struct kvm_regs regs);
 void debug_mem(unsigned long long rip);
 
 size_t guest_size = 0x20000000ULL;
@@ -354,7 +353,7 @@ static int load_kernel(uint8_t* mem, const char* path)
 		int fd, ret;
 		int output_file_size = 5*1024*1024;
 
-		printf("Compressed kernel detected, uncompressing...\n");
+		fprintf(stderr, "Compressed kernel detected, uncompressing...\n");
 
 		fd = open(path, O_RDONLY);
 		if(fd == -1) {
@@ -446,7 +445,7 @@ static int load_kernel(uint8_t* mem, const char* path)
 		if (phdr[ph_i].p_type != PT_LOAD)
 			continue;
 
-		//printf("Kernel location 0x%zx, file size 0x%zx, memory size 0x%zx\n", paddr, filesz, memsz);
+		//fprintf(stderr, "Kernel location 0x%zx, file size 0x%zx, memory size 0x%zx\n", paddr, filesz, memsz);
 
 		if(is_compressed)
 			memcpy(mem+paddr-GUEST_OFFSET, compr_out+offset, filesz);
@@ -612,7 +611,7 @@ static int load_checkpoint(uint8_t* mem, const char* path)
 #else
 
 		while (fread(&location, sizeof(location), 1, f) == 1) {
-			//printf("location 0x%zx\n", location);
+			//fprintf(stderr, "location 0x%zx\n", location);
 			if (location & PG_PSE)
 				ret = fread((size_t*) (mem + (location & PAGE_2M_MASK)), (1UL << PAGE_2M_BITS), 1, f);
 			else
@@ -714,6 +713,7 @@ static void show_registers(int id, struct kvm_regs* regs, struct kvm_sregs* sreg
 
 static void print_registers(void)
 {
+	fprintf(stderr, "print_registers\n");
 	struct kvm_regs regs;
 	struct kvm_sregs sregs;
 
@@ -895,6 +895,7 @@ static inline void check_network(void)
 
 static int vcpu_loop_fork(void)
 {
+	fprintf(stderr, "vcpu_loop_fork\n");
 	int ret;
 
 	/* Try to determine the smallest fd value the guest can use, assume they
@@ -912,27 +913,48 @@ static int vcpu_loop_fork(void)
 		if (cpuid == 0)
 			no_checkpoint++;
 	}
-	printf("ncores = %d\n", ncores);
+	fprintf(stderr, "ncores = %d\n", ncores);
 	if (verbose)
 		puts("uhyve is entering vcpu_loop");
 	
-	ret = ioctl(vcpufd, KVM_RUN, NULL);
+	for(int i = 0;i < 2; i++)
+	{
+		ret = ioctl(vcpufd, KVM_RUN, NULL);
+		print_registers();
 
-	printf("ioctl ret = %d\n", ret);
-	printf("exit reason = 0x%x\n", run->exit_reason);
+		fprintf(stderr, "ioctl ret = %d\n", ret);
+		fprintf(stderr, "exit reason = 0x%x\n", run->exit_reason);
 
-	/* handle requests */
-	switch (run->exit_reason) {
-		case KVM_EXIT_IO:
-			printf("port 0x%x\n", run->io.port);
-			switch (run->io.port) {
-				default:
-					break;
-			}
-			break;
-		default:
-			printf("run->exit_reason = %x\n", run->exit_reason);
-			break;
+		/* handle requests */
+		switch (run->exit_reason) {
+			case KVM_EXIT_IO:
+				fprintf(stderr, "forked port 0x%x\n", run->io.port);
+				switch (run->io.port) {
+					case UHYVE_PORT_PFAULT: {
+						fprintf(stderr, "run print_registers\n");
+						print_registers();
+
+						char addr2line_call[128];
+						unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
+						uhyve_pfault_t *arg = (uhyve_pfault_t *)(guest_mem + data);
+						fprintf(stderr, "GUEST PAGE FAULT @0x%lx (RIP @0x%lx)\n",
+								arg->addr, arg->rip);
+						sprintf(addr2line_call, "addr2line -a %lx -e %s\n", arg->rip,
+								(arg->rip >= tux_start_address) ? htux_bin :
+								htux_kernel);
+						fprintf(stderr, "%s\n", addr2line_call);
+						// system(addr2line_call);
+
+						break;
+					}
+					default:
+						break;
+				}
+				break;
+			default:
+				fprintf(stderr, "run->exit_reason = %x\n", run->exit_reason);
+				break;
+		}
 	}
 	return 0;
 }
@@ -956,7 +978,7 @@ static int vcpu_loop(void)
 		if (cpuid == 0)
 			no_checkpoint++;
 	}
-	printf("ncores = %d\n", ncores);
+	fprintf(stderr, "ncores = %d\n", ncores);
 	if (verbose)
 		puts("uhyve is entering vcpu_loop");
 
@@ -993,7 +1015,7 @@ static int vcpu_loop(void)
 			break;
 
 		case KVM_EXIT_IO:
-			//printf("port 0x%x\n", run->io.port);
+			//fprintf(stderr, "port 0x%x\n", run->io.port);
 			switch (run->io.port) {
 			case UHYVE_PORT_WRITE: {
 				int ret;
@@ -1459,46 +1481,43 @@ static int vcpu_loop(void)
 				}
 
 			case UHYVE_PORT_FORK: {
-				printf("Hypervisor fork\n");
+				fprintf(stderr, "UHYVE_PORT_FORK: Hypervisor fork\n");
 				struct vcpu_state *state = (struct vcpu_state *)malloc(sizeof(struct vcpu_state) * ncores);
+
+				fprintf(stderr, "UHYVE_PORT_FORK: Old cpu id = %d\n", vcpufd);
 
 				for(int i = 0; i < ncores; i++)
 				{
-					printf("Get state from fd = %d\n", vcpu_fds[i]);
+					fprintf(stderr, "UHYVE_PORT_FORK: Get state from fd = %d\n", vcpu_fds[i]);
 					state[i] = get_vcpu_state(vcpu_fds[i]);
 				}
 				int ret = fork();
-				printf("ret = %d\n", ret);
+				fprintf(stderr, "UHYVE_PORT_FORK: ret = %d\n", ret);
 
 				unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
 
-				printf("ret = %d, data offset = %d\n", ret, data);
+				fprintf(stderr, "UHYVE_PORT_FORK: ret = %d, data offset = %d\n", ret, data);
 				uhyve_fork_t *args = (uhyve_fork_t *) (guest_mem+data);
 
 				if(ret != 0) // Parent
 				{
-					printf("I'm parent\n");
+					fprintf(stderr, "UHYVE_PORT_FORK: I'm parent\n");
 					args->ret = ret;
-					for(int i = 0; i < ncores; i++)
-					{
-						printf("Parent Set state to fd = %d\n", vcpu_fds[i]);
-						debug_regs(state[i].regs);
-						set_vcpu_state(vcpu_fds[i], state[i]);
-					}
+					print_registers();
 					free(state);
-					printf("Parent end\n");
+					fprintf(stderr, "UHYVE_PORT_FORK: Parent end\n");
 				}
 				else // Child
 				{
-					printf("I'm child\n");
+					fprintf(stderr, "UHYVE_PORT_FORK: I'm child\n");
 					args->ret = 0;
 
 					uhyve_init_fork();
 					cpuid = 0;
-					debug_regs(state[0].regs);
 					vcpu_init_with_state(state[0]);
-
-					debug_mem(state[0].regs.rip);
+					fprintf(stderr, "UHYVE_PORT_FORK: New cpu id = %d\n", vcpufd);
+					print_registers();
+					// debug_mem(state[0].regs.rip);
 
 					uhyve_loop_with_state_fork(state);
 					return 0;
@@ -1652,6 +1671,7 @@ static int vcpu_init(void)
 
 static void save_cpu_state(void)
 {
+	fprintf(stderr, "save_cpu_state\n");
 	struct {
 		struct kvm_msrs info;
 		struct kvm_msr_entry entries[MAX_MSR_ENTRIES];
@@ -1834,7 +1854,7 @@ int uhyve_init(char** argv)
 
 		const char* full_chk = getenv("HERMIT_FULLCHECKPOINT");
 		if (full_chk && (strcmp(full_chk, "0") != 0)) {
-			printf("full\n");
+			fprintf(stderr, "full\n");
 			full_checkpoint = true;
 		}
 	}//get from env: mem cores full_chk(?)
@@ -1974,7 +1994,7 @@ int uhyve_init(char** argv)
 	// TODO: add VAPIC support
 	cap_vapic = kvm_ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_VAPIC) <= 0 ? false : true;
 	//if (cap_vapic)
-	//	printf("System supports vapic\n");
+	//	fprintf(stderr, "System supports vapic\n");
 
 	const char* hermit_tux;
 	hermit_tux = getenv("HERMIT_TUX");
@@ -2021,7 +2041,7 @@ int uhyve_init(char** argv)
 
 int uhyve_init_fork()
 {
-	printf("uhyve_init_fork\n");
+	fprintf(stderr, "uhyve_init_fork\n");
 	// atexit(uhyve_atexit);
 
 	kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
@@ -2031,7 +2051,7 @@ int uhyve_init_fork()
 	/* Create the virtual machine */
 	vmfd = kvm_ioctl(kvm, KVM_CREATE_VM, 0);
 
-	printf("KVM_CREATE_VM fd = %d\n", vmfd);
+	fprintf(stderr, "KVM_CREATE_VM fd = %d\n", vmfd);
 
 	/* Initialize seccomp filter */
 	if(uhyve_seccomp_enabled) {
@@ -2115,14 +2135,14 @@ int uhyve_init_fork()
 	// TODO: add VAPIC support
 	cap_vapic = kvm_ioctl(vmfd, KVM_CHECK_EXTENSION, KVM_CAP_VAPIC) <= 0 ? false : true;
 	//if (cap_vapic)
-	//	printf("System supports vapic\n");
+	//	fprintf(stderr, "System supports vapic\n");
 
 	pthread_barrier_init(&barrier, NULL, ncores);
 
 	// create first CPU, it will be the boot processor by default
 	// Postponed to next func
 
-	printf("uhyve_init_fork end\n");
+	fprintf(stderr, "uhyve_init_fork end\n");
 }
 
 struct vcpu_state get_vcpu_state(int vcpufd)
@@ -2142,14 +2162,9 @@ struct vcpu_state get_vcpu_state(int vcpufd)
 	return state;
 }
 
-void debug_regs(struct kvm_regs regs)
-{
-	printf("DEBUG regs rip = 0x%llx, rsp = 0x%llx\n", regs.rip, regs.rsp);
-}
-
 void debug_mem(unsigned long long rip)
 {
-	printf("Eight bytes at 0x%llx: %llx\n", rip, *(unsigned long long*)(guest_mem + rip));
+	fprintf(stderr, "Eight bytes at 0x%llx: %llx\n", rip, *(unsigned long long*)(guest_mem + rip));
 }
 
 void set_vcpu_state(int vcpufd, struct vcpu_state state)
@@ -2167,15 +2182,15 @@ void set_vcpu_state(int vcpufd, struct vcpu_state state)
 
 static int vcpu_init_with_state(struct vcpu_state state)
 {
-	printf("vcpu_init_with_state\n");
+	fprintf(stderr, "vcpu_init_with_state\n");
 	vcpu_fds[cpuid] = vcpufd = kvm_ioctl(vmfd, KVM_CREATE_VCPU, cpuid);
 
-	printf("KVM_CREATE_VCPU\n");
+	fprintf(stderr, "KVM_CREATE_VCPU\n");
 
 	/* Map the shared kvm_run structure and following data. */
 	size_t mmap_size = (size_t) kvm_ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
 
-	printf("KVM_GET_VCPU_MMAP_SIZE = %ld\n", mmap_size);
+	fprintf(stderr, "KVM_GET_VCPU_MMAP_SIZE = %ld\n", mmap_size);
 
 	// TODO: 每个vcpu初始化的时候都会运行一边这个，但是线程之间共享堆，也就是会把run给覆盖掉
 	// 这个函数是 static 的会不会有影响
@@ -2184,11 +2199,13 @@ static int vcpu_init_with_state(struct vcpu_state state)
 		err(1, "KVM: VCPU mmap failed");
 
 	run->apic_base = APIC_DEFAULT_BASE;
+
 	setup_cpuid(kvm, vcpufd);
 
+	show_registers(0, &state.regs, &state.sregs);
 	set_vcpu_state(vcpufd, state);
 
-	printf("vcpu_init_with_state end\n");
+	fprintf(stderr, "vcpu_init_with_state end\n");
 	return 0;
 }
 
@@ -2294,22 +2311,22 @@ nextslot:
 	for(size_t i=0; i<(1 << PAGE_MAP_BITS); i++) {
 		if ((pml4[i] & PG_PRESENT) != PG_PRESENT)
 			continue;
-		//printf("pml[%zd] 0x%zx\n", i, pml4[i]);
+		//fprintf(stderr, "pml[%zd] 0x%zx\n", i, pml4[i]);
 		size_t* pdpt = (size_t*) (guest_mem+(pml4[i] & PAGE_MASK));
 		for(size_t j=0; j<(1 << PAGE_MAP_BITS); j++) {
 			if ((pdpt[j] & PG_PRESENT) != PG_PRESENT)
 				continue;
-			//printf("\tpdpt[%zd] 0x%zx\n", j, pdpt[j]);
+			//fprintf(stderr, "\tpdpt[%zd] 0x%zx\n", j, pdpt[j]);
 			size_t* pgd = (size_t*) (guest_mem+(pdpt[j] & PAGE_MASK));
 			for(size_t k=0; k<(1 << PAGE_MAP_BITS); k++) {
 				if ((pgd[k] & PG_PRESENT) != PG_PRESENT)
 					continue;
-				//printf("\t\tpgd[%zd] 0x%zx\n", k, pgd[k] & ~PG_XD);
+				//fprintf(stderr, "\t\tpgd[%zd] 0x%zx\n", k, pgd[k] & ~PG_XD);
 				if ((pgd[k] & PG_PSE) != PG_PSE) {
 					size_t* pgt = (size_t*) (guest_mem+(pgd[k] & PAGE_MASK));
 					for(size_t l=0; l<(1 << PAGE_MAP_BITS); l++) {
 						if ((pgt[l] & (PG_PRESENT|flag)) == (PG_PRESENT|flag)) {
-							//printf("\t\t\t*pgt[%zd] 0x%zx, 4KB\n", l, pgt[l] & ~PG_XD);
+							//fprintf(stderr, "\t\t\t*pgt[%zd] 0x%zx, 4KB\n", l, pgt[l] & ~PG_XD);
 							if (!full_checkpoint)
 								pgt[l] = pgt[l] & ~(PG_DIRTY|PG_ACCESSED);
 							size_t pgt_entry = pgt[l] & ~PG_PSE; // because PAT use the same bit as PSE
@@ -2320,7 +2337,7 @@ nextslot:
 						}
 					}
 				} else if ((pgd[k] & flag) == flag) {
-					//printf("\t\t*pgd[%zd] 0x%zx, 2MB\n", k, pgd[k] & ~PG_XD);
+					//fprintf(stderr, "\t\t*pgd[%zd] 0x%zx, 2MB\n", k, pgd[k] & ~PG_XD);
 					if (!full_checkpoint)
 						pgd[k] = pgd[k] & ~(PG_DIRTY|PG_ACCESSED);
 					if (fwrite(pgd+k, sizeof(size_t), 1, f) != 1)
@@ -2475,14 +2492,14 @@ int uhyve_loop(int argc, char **argv)
 
 int uhyve_loop_with_state_fork(struct vcpu_state *state)
 {
-	printf("uhyve_loop_with_state_fork\n");
+	fprintf(stderr, "uhyve_loop_with_state_fork\n");
 	int i;
 	vcpu_threads[0] = pthread_self();
-	printf("pthread_self = 0x%lx\n", vcpu_threads[0]);
+	fprintf(stderr, "pthread_self = 0x%lx\n", vcpu_threads[0]);
 
 	for(size_t i = 1; i < ncores; i++)
 	{
-		printf("create uhyve thread %ld\n", i);
+		fprintf(stderr, "create uhyve thread %ld\n", i);
 		struct thread_arg *arg = (struct thread_arg *)malloc(sizeof(struct thread_arg));
 		arg->cpuid = i;
 		arg->state = state[i];
@@ -2506,7 +2523,7 @@ int uhyve_loop_with_state_fork(struct vcpu_state *state)
 		}
 	}
 
-	printf("vcpu_loop\n");
+	fprintf(stderr, "vcpu_loop\n");
 	// Run first CPU
 	return vcpu_loop_fork();
 }

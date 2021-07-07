@@ -37,6 +37,7 @@
 
 #define kvm_ioctl(fd, cmd, arg) ({ \
 	const int ret = ioctl(fd, cmd, arg); \
+	fprintf(stderr, "ioctl %s ret = %d\n", #cmd, ret); \
 	if(ret == -1) \
 		err(1, "KVM: ioctl " #cmd " failed"); \
 	ret; \

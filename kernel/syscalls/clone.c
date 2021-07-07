@@ -27,6 +27,7 @@ int sys_clone(unsigned long clone_flags, void *stack, int *ptid, int *ctid,
 		uhyve_fork_t uhyve_args = {-1};
 
 		uhyve_send(UHYVE_PORT_FORK, (unsigned)virt_to_phys((size_t)&uhyve_args));
+		LOG_INFO("fork end ret = %d\n", uhyve_args.ret);
 		
 		return uhyve_args.ret;
 	}

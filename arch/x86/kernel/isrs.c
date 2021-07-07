@@ -579,6 +579,7 @@ void syscall_handler(struct state *s)
 			/* clone */
 			s->rax = sys_clone(s->rdi, (void *)s->rsi, (int *)s->rdx,
                     (int *)s->r10, (void *)s->r8, s);
+			LOG_INFO("sys_clone returned, rax = %lx\n", s->rax);
 			break;
 #endif /* DISABLE_SYS_CLONE */
 
@@ -925,6 +926,7 @@ void syscall_handler(struct state *s)
 			LOG_ERROR("Unsuported Linux syscall: %d\n", s->rax);
 			sys_exit(-EFAULT);
 	}
+	LOG_INFO("syscall finished\n");
 }
 
 /* interrupt handler to save / restore the FPU context */

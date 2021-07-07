@@ -88,7 +88,7 @@ int uhyve_profiler_exit(void) {
 	fprintf(f, "%s\n", kernel_abs_path);
 
 	for(i=0; i<tux_samples_num; i++)
-		fprintf(f, "%llx\n", ((uint64_t *)(guest_mem + tux_samples))[i]);
+		fprintf(f, "%lx\n", ((uint64_t *)(guest_mem + tux_samples))[i]);
 
 #ifdef PROF_VERBOSE
 	printf("HermiTux profiler: woke up %u times to gather samples, wrote "
