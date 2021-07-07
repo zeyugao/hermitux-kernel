@@ -517,6 +517,22 @@ isyscall:
 	popfq
     sti
 
+    push rax
+    push rdi
+    push rsi
+    push rcx
+
+    mov rdi, rcx
+    mov rsi, rax
+
+    extern isrs_log
+    call isrs_log
+
+    pop rcx
+    pop rsi
+    pop rdi
+    pop rax
+
     jmp rcx
     ;o64 sysret
 

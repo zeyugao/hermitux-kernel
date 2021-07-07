@@ -34,15 +34,15 @@
  * an ISR installer procedure and a fault handler.\n
  */
 
-#include <hermit/stdio.h>
-#include <hermit/tasks.h>
-#include <hermit/errno.h>
-#include <hermit/logging.h>
+#include <asm/apic.h>
+#include <asm/idt.h>
+#include <asm/irq.h>
 #include <asm/irqflags.h>
 #include <asm/isrs.h>
-#include <asm/irq.h>
-#include <asm/idt.h>
-#include <asm/apic.h>
+#include <hermit/errno.h>
+#include <hermit/logging.h>
+#include <hermit/stdio.h>
+#include <hermit/tasks.h>
 
 #include <hermit/syscall-config.h>
 
@@ -238,6 +238,12 @@ static const char *exception_messages[] = {
 	"SIMD Floating-Point", "Virtualization", "Reserved", "Reserved", "Reserved",
 	"Reserved", "Reserved", "Reserved", "Reserved", "Reserved", "Reserved",
 	"Reserved", "Reserved" };
+
+void isrs_log(unsigned long long rcx, unsigned long long rax)
+{
+	LOG_INFO("rcx: %llx\n", rcx);
+	LOG_INFO("rax: %llx\n", rax);
+}
 
 void syscall_handler(struct state *s);
 
@@ -591,12 +597,13 @@ void syscall_handler(struct state *s)
 
 #ifndef DISABLE_SYS_CLONE
 		case 56:
+		case 57:
 			/* clone */
 			print_state(s);
 			s->rax = sys_clone(s->rdi, (void *)s->rsi, (int *)s->rdx,
                     (int *)s->r10, (void *)s->r8, s);
 			print_state(s);
-			LOG_INFO("sys_clone returned, rax = %lx\n", s->rax);
+			LOG_INFO("sys_clone returned, rax = %d\n", s->rax);
 			break;
 #endif /* DISABLE_SYS_CLONE */
 
