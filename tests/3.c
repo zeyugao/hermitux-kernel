@@ -1,8 +1,8 @@
 
-#include <unistd.h>
 #include <stdio.h>
+#include <unistd.h>
 
-int main()
+int myfork()
 {
     int ret;
     __asm__(
@@ -11,6 +11,12 @@ int main()
         "mov %%eax, %0"
         : "=r" (ret)
     );
+    return ret;
+}
+
+int main()
+{
+    int ret = myfork();
 
     if (ret != 0)
     {
