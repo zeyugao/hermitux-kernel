@@ -302,6 +302,8 @@ size_t** irq_handler(struct state *s)
 	// Find out if we have a custom handler to run for this IRQ and run it
 	irq_handler_t handler = irq_routines[s->int_no];
 
+	LOG_INFO("handler addr = 0x%llx\n", handler);
+
 	if (handler) {
 		handler(s);
 	} else {

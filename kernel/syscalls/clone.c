@@ -15,6 +15,7 @@ typedef struct {
 #define CLONE_CHILD_SETTID		0x01000000
 
 extern void __clone_entry(struct state *s);
+extern void isyscall(void);
 
 int sys_clone(unsigned long clone_flags, void *stack, int *ptid, int *ctid,
         void *tls, struct state *state)
@@ -28,6 +29,15 @@ int sys_clone(unsigned long clone_flags, void *stack, int *ptid, int *ctid,
 
 		uhyve_send(UHYVE_PORT_FORK, (unsigned)virt_to_phys((size_t)&uhyve_args));
 		LOG_INFO("fork end ret = %d\n", uhyve_args.ret);
+
+		if (uhyve_args.ret == 0) // Child
+		{
+			wrmsr(MSR_EFER, rdmsr(MSR_EFER) | EFER_LMA | EFER_LME | EFER_SCE);
+			wrmsr(MSR_STAR, (/*0x1BULL*/ 0x08ULL << 48) | (0x08ULL << 32));
+			wrmsr(MSR_LSTAR, (size_t) &isyscall);
+			//  clear IF flag during an interrupt
+			wrmsr(MSR_SYSCALL_MASK, EFLAGS_TF|EFLAGS_DF|EFLAGS_IF|EFLAGS_AC|EFLAGS_NT);
+		}
 		
 		return uhyve_args.ret;
 	}

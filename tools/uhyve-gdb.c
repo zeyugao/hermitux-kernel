@@ -76,7 +76,7 @@ static bool stepping = false;
 static const uint8_t int3 = 0xcc;
 
 static int socket_fd = 0;
-static int portno = 1234; /* Default port number */
+static int portno = 1235; /* Default port number */
 static const char hexchars[] = "0123456789abcdef";
 
 #define BUFMAX                         4096
@@ -167,6 +167,7 @@ static int wait_for_connect()
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(portno);
 
+    fprintf(stderr, "portno = %d\n", portno);
     if (bind(listen_socket_fd, (struct sockaddr *)&server_addr,
              sizeof(server_addr)) == -1) {
         err(1, "bind failed");
@@ -402,6 +403,8 @@ static void gdb_handle_exception(int vcpufd, int sigval)
     /* Notify the debugger of our last signal */
     send_response('S', sigval, true);
 
+    fprintf(stderr, "vcpufd = %d, sent_response, sigval = %d\n", vcpufd, sigval);
+
     for (;;) {
         uint64_t addr = 0, result;
         gdb_breakpoint_type type;
@@ -424,6 +427,8 @@ static void gdb_handle_exception(int vcpufd, int sigval)
 	 * and ‘s’ (step) commands."
          */
         command = packet[0];
+
+        fprintf(stderr, "command = %d\n", command);
         switch (command) {
         case 's': {
             /* Step */

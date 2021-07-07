@@ -299,6 +299,7 @@ static void uhyve_exit(void* arg)
 
 static void uhyve_atexit(void)
 {
+	fprintf(stderr, "uhyve_atexit\n");
 	uhyve_exit(NULL);
 
 	if(uhyve_profiler_enabled)
@@ -1514,6 +1515,9 @@ static int vcpu_loop(void)
 
 					uhyve_init_fork();
 					cpuid = 0;
+
+					state[0].regs.rip++;
+					fprintf(stderr, "new rip = 0x%llx", state[0].regs.rip);
 					vcpu_init_with_state(state[0]);
 					fprintf(stderr, "UHYVE_PORT_FORK: New cpu id = %d\n", vcpufd);
 					print_registers();
@@ -2470,8 +2474,9 @@ int uhyve_loop(int argc, char **argv)
 
 	/* init uhyve gdb support */
 	if(uhyve_gdb_enabled)
-		uhyve_gdb_init(vcpufd);
-
+	{
+		// uhyve_gdb_init(vcpufd);
+	}
 	/* Add vcpu_fds to the seccomp filter then load it */
 	if(uhyve_seccomp_enabled) {
 		for(i=0; i<ncores; i++)
@@ -2525,5 +2530,5 @@ int uhyve_loop_with_state_fork(struct vcpu_state *state)
 
 	fprintf(stderr, "vcpu_loop\n");
 	// Run first CPU
-	return vcpu_loop_fork();
+	return vcpu_loop();
 }

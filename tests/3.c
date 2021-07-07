@@ -1,12 +1,23 @@
 
+#include <unistd.h>
 #include <stdio.h>
 
 int main()
 {
-    // outportl(0x123, 0);
+    int ret;
     __asm__(
-        "mov $57, %rax\n\t"
-        "syscall"
+        "mov $57, %%rax\n\t"
+        "syscall\n\t"
+        "mov %%eax, %0"
+        : "=r" (ret)
     );
-    printf("asdfadfasdf\n");
+
+    if (ret != 0)
+    {
+        printf("prog: Parent, pid = %d\n", ret);
+    }
+    else
+    {
+        printf("prog: Child\n");
+    }
 }
