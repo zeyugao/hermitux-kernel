@@ -17,7 +17,13 @@ endif(${NO_NET})
 
 ### ASM sources ###
 
-file(GLOB FAST_SYSCALL_ASM kernel/syscall-*.s)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/kernel/syscall-veneer.asm)
+	set(FAST_SYSCALL_ASM "kernel/syscall-veneer.asm")
+else()
+	set(FAST_SYSCALL_ASM "")
+endif()
+
+message("FAST_SYSCALL_ASM=${FAST_SYSCALL_ASM}")
 
 add_library(${X86_KERNEL_ASM_TARGET} OBJECT
 	kernel/entry.asm

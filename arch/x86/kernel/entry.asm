@@ -148,6 +148,9 @@ boot_pgt:
 
 SECTION .ktext
 align 4
+
+extern dummy_asm_func
+
 start64:
     ; reset registers to kill any stale realmode selectors
     mov eax, 0x10
