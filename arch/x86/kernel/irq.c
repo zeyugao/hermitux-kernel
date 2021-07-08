@@ -282,7 +282,7 @@ int irq_init(void)
  */
 size_t** irq_handler(struct state *s)
 {
-	LOG_ERROR("irq_handler rip=%d, int_no=%d\n", s->rip, s->int_no);
+	LOG_ERROR("irq_handler rip=%lx, int_no=%d\n", s->rip, s->int_no);
 #ifdef MEASURE_IRQ
 	uint64_t diff = 0;
 	if (go)

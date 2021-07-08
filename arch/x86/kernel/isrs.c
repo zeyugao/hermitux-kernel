@@ -278,7 +278,7 @@ void print_state(struct state *s)
 
 void syscall_handler(struct state *s)
 {
-	LOG_INFO("Caught syscall %d (%s) %#lx:%#lx\n", s->rax, syscalls_names[s->rax]);
+	LOG_INFO("Caught syscall at [%lx], %d (%s) %#lx:%#lx\n", s->rcx, s->rax, syscalls_names[s->rax]);
 	// 后面两个会继续读下去，读到栈上面的一些东西
 
 	switch(s->rax) {
@@ -955,7 +955,7 @@ void syscall_handler(struct state *s)
 
 void fast_syscall_handler(struct fast_syscall_state *s)
 {
-	LOG_INFO("Caught syscall %d (%s) %#lx:%#lx\n", s->rax, syscalls_names[s->rax]);
+	LOG_INFO("Caught fast syscall %d (%s) %#lx:%#lx\n", s->rax, syscalls_names[s->rax]);
 	// 后面两个会继续读下去，读到栈上面的一些东西
 
 	switch(s->rax) {
