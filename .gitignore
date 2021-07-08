@@ -28,3 +28,5 @@ tools/.proxy.c.swp
 
 log
 tests/*.asm
+arch/x86/kernel/syscall-veneer.s
+arch/x86/kernel/syscall-veneer.asm
