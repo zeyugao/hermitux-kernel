@@ -148,6 +148,16 @@ typedef struct mregs {
 	uint32_t mxcsr;
 } mregs_t;
 
+struct fast_syscall_state {
+	uint64_t r9;
+	uint64_t r8;
+	uint64_t r10;
+	uint64_t rdx;
+	uint64_t rsi;
+	uint64_t rdi;
+	uint64_t rax;
+};
+
 /// This defines what the stack looks like after the task context is saved
 struct state {
 	/// GS register

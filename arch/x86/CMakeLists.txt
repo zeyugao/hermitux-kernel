@@ -17,7 +17,7 @@ endif(${NO_NET})
 
 ### ASM sources ###
 
-if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/kernel/syscall-veneer.asm)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/kernel/syscall-veneer.asm AND FAST_SYSCALL)
 	set(FAST_SYSCALL_ASM "kernel/syscall-veneer.asm")
 else()
 	set(FAST_SYSCALL_ASM "")
