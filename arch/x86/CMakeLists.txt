@@ -17,7 +17,7 @@ endif(${NO_NET})
 
 ### ASM sources ###
 
-file(GLOB FAST_SYSCALL_ASM kernel/syscall_*.asm)
+file(GLOB FAST_SYSCALL_ASM kernel/syscall-*.asm)
 
 add_library(${X86_KERNEL_ASM_TARGET} OBJECT
 	kernel/entry.asm
