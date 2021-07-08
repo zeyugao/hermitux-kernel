@@ -17,10 +17,12 @@ endif(${NO_NET})
 
 ### ASM sources ###
 
+file(GLOB FAST_SYSCALL_ASM kernel/syscall_*.asm)
+
 add_library(${X86_KERNEL_ASM_TARGET} OBJECT
 	kernel/entry.asm
 	libkern/string.asm
-	${APPEND_FAST_SYSCALL_ASM_PATH})
+	${FAST_SYSCALL_ASM})
 
 # HACK: We need to post-process the objects by running elfedit on them, but
 #       there is currently no way to get the list of objects out of CMake
