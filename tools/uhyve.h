@@ -32,12 +32,13 @@
 #include <stdint.h>
 #include <sys/ioctl.h>
 #include <err.h>
+#include "logging.h"
 
 #define GUEST_OFFSET		0x0
 
 #define kvm_ioctl(fd, cmd, arg) ({ \
 	const int ret = ioctl(fd, cmd, arg); \
-	fprintf(stderr, "ioctl %s ret = %d\n", #cmd, ret); \
+	LOG_DEBUG("ioctl %s ret = %d\n", #cmd, ret); \
 	if(ret == -1) \
 		err(1, "KVM: ioctl " #cmd " failed"); \
 	ret; \

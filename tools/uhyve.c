@@ -62,6 +62,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "logging.h"
 #include "proxy.h"
 #include "uhyve-cpu.h"
 #include "uhyve-elf.h"
@@ -300,7 +301,7 @@ static void uhyve_exit(void* arg)
 
 static void uhyve_atexit(void)
 {
-	fprintf(stderr, "uhyve_atexit prog_cnt = %d\n", prog_cnt);
+	LOG_INFO("uhyve_atexit prog_cnt = %d\n", prog_cnt);
 	uhyve_exit(NULL);
 
 	if(uhyve_profiler_enabled)
@@ -321,13 +322,12 @@ static void uhyve_atexit(void)
 
 	if (klog && verbose)
 	{
-		fputs("\nuhyve_atexit Dump kernel log:\n", stderr);
-		fputs("================\n", stderr);
-		fprintf(stderr, "%s\n", klog);
+		LOG_DEBUG("uhyve_atexit Dump kernel log:\n");
+		LOG_DEBUG("================\n");
+		LOG_DEBUG("%s", klog);
 
-		fputs("\nFinished Dump kernel log:\n", stderr);
-		fputs("================\n", stderr);
-
+		LOG_DEBUG("Finished Dump kernel log:\n");
+		LOG_DEBUG("================\n");
 	}
 
 	// clean up and close KVM
@@ -355,17 +355,17 @@ static int load_kernel(uint8_t* mem, const char* path)
 		int fd, ret;
 		int output_file_size = 5*1024*1024;
 
-		fprintf(stderr, "Compressed kernel detected, uncompressing...\n");
+		LOG_DEBUG("Compressed kernel detected, uncompressing...\n");
 
 		fd = open(path, O_RDONLY);
 		if(fd == -1) {
-			fprintf(stderr, "open %s: %s\n", path, strerror(errno));
+			LOG_ERROR("open %s: %s\n", path, strerror(errno));
 			return -1;
 		}
 
 		ret = fstat(fd, &st);
 		if(ret) {
-			fprintf(stderr, "stat %s: %s\n", path, strerror(errno));
+			LOG_ERROR("stat %s: %s\n", path, strerror(errno));
 			return -1;
 		}
 
@@ -374,13 +374,13 @@ static int load_kernel(uint8_t* mem, const char* path)
 
 		ret = read(fd, compr_in, st.st_size);
 		if(ret != st.st_size) {
-			fprintf(stderr, "read %s: %s\n", path, strerror(errno));
+			LOG_ERROR("read %s: %s\n", path, strerror(errno));
 			close(fd); goto out;
 		}
 
 		ret = mini_gz_start(&gz, compr_in, st.st_size);
 		if(ret != 0) {
-			fprintf(stderr, "error init uncompressing %s\n", path);
+			LOG_ERROR("error init uncompressing %s\n", path);
 			close(fd); goto out;
 		}
 
@@ -410,7 +410,7 @@ static int load_kernel(uint8_t* mem, const char* path)
 	    || hdr.e_ident[EI_CLASS] != ELFCLASS64
 	    || hdr.e_ident[EI_OSABI] != HERMIT_ELFOSABI
 	    || hdr.e_type != ET_EXEC || hdr.e_machine != EM_X86_64) {
-		fprintf(stderr, "Inavlide HermitCore file!\n");
+		LOG_ERROR("Inavlide HermitCore file!\n");
 		goto out;
 	}
 
@@ -424,7 +424,7 @@ static int load_kernel(uint8_t* mem, const char* path)
 
 		phdr = malloc(buflen);
 		if (!phdr) {
-			fprintf(stderr, "Not enough memory\n");
+			LOG_ERROR("Not enough memory\n");
 			goto out;
 		}
 
@@ -447,7 +447,7 @@ static int load_kernel(uint8_t* mem, const char* path)
 		if (phdr[ph_i].p_type != PT_LOAD)
 			continue;
 
-		//fprintf(stderr, "Kernel location 0x%zx, file size 0x%zx, memory size 0x%zx\n", paddr, filesz, memsz);
+		LOG_DEBUG("Kernel location 0x%zx, file size 0x%zx, memory size 0x%zx\n", paddr, filesz, memsz);
 
 		if(is_compressed)
 			memcpy(mem+paddr-GUEST_OFFSET, compr_out+offset, filesz);
@@ -531,7 +531,7 @@ out:
 		close(fd);
 
 	//if (verbose)
-	//	fprintf(stderr, "Memory size of the image: %zd KiB\n", total_size / 1024);
+	LOG_DEBUG("Memory size of the image: %zd KiB\n", total_size / 1024);
 
 	return 0;
 }
@@ -571,7 +571,7 @@ static int load_checkpoint(uint8_t* mem, const char* path)
 	if (hermit_tux)
 	{
 		if (htux_bin == NULL) {
-			fprintf(stderr, "Name of the ELF file is missing!\n");
+			LOG_ERROR("Name of the ELF file is missing!\n");
 			exit(EXIT_FAILURE);
 		}
 
@@ -613,14 +613,14 @@ static int load_checkpoint(uint8_t* mem, const char* path)
 #else
 
 		while (fread(&location, sizeof(location), 1, f) == 1) {
-			//fprintf(stderr, "location 0x%zx\n", location);
+			LOG_ERROR("location 0x%zx\n", location);
 			if (location & PG_PSE)
 				ret = fread((size_t*) (mem + (location & PAGE_2M_MASK)), (1UL << PAGE_2M_BITS), 1, f);
 			else
 				ret = fread((size_t*) (mem + (location & PAGE_MASK)), (1UL << PAGE_BITS), 1, f);
 
 			if (ret != 1) {
-				fprintf(stderr, "Unable to read checkpoint: ret = %d", ret);
+				LOG_ERROR("Unable to read checkpoint: ret = %d", ret);
 				err(1, "fread failed");
 			}
 		}
@@ -633,7 +633,7 @@ static int load_checkpoint(uint8_t* mem, const char* path)
 		gettimeofday(&end, NULL);
 		size_t msec = (end.tv_sec - begin.tv_sec) * 1000;
 		msec += (end.tv_usec - begin.tv_usec) / 1000;
-		fprintf(stderr, "Load checkpoint %u in %zd ms\n", no_checkpoint, msec);
+		LOG_DEBUG("Load checkpoint %u in %zd ms\n", no_checkpoint, msec);
 	}
 
 	return 0;
@@ -641,12 +641,12 @@ static int load_checkpoint(uint8_t* mem, const char* path)
 
 static inline void show_dtable(const char *name, struct kvm_dtable *dtable)
 {
-	fprintf(stderr, " %s                 %016zx  %08hx\n", name, (size_t) dtable->base, (uint16_t) dtable->limit);
+	LOG_DEBUG(" %s                 %016zx  %08hx\n", name, (size_t) dtable->base, (uint16_t) dtable->limit);
 }
 
 static inline void show_segment(const char *name, struct kvm_segment *seg)
 {
-	fprintf(stderr, " %s       %04hx      %016zx  %08x  %02hhx    %x %x   %x  %x %x %x %x\n",
+	LOG_DEBUG(" %s       %04hx      %016zx  %08x  %02hhx    %x %x   %x  %x %x %x %x\n",
 		name, (uint16_t) seg->selector, (size_t) seg->base, (uint32_t) seg->limit,
 		(uint8_t) seg->type, seg->present, seg->dpl, seg->db, seg->s, seg->l, seg->g, seg->avl);
 }
@@ -672,24 +672,24 @@ static void show_registers(int id, struct kvm_regs* regs, struct kvm_sregs* sreg
 	r10 = regs->r10; r11 = regs->r11; r12 = regs->r12;
 	r13 = regs->r13; r14 = regs->r14; r15 = regs->r15;
 
-	fprintf(stderr, "\n Dump state of CPU %d\n", id);
-	fprintf(stderr, "\n Registers:\n");
-	fprintf(stderr, " ----------\n");
-	fprintf(stderr, " rip: %016zx   rsp: %016zx flags: %016zx\n", rip, rsp, rflags);
-	fprintf(stderr, " rax: %016zx   rbx: %016zx   rcx: %016zx\n", rax, rbx, rcx);
-	fprintf(stderr, " rdx: %016zx   rsi: %016zx   rdi: %016zx\n", rdx, rsi, rdi);
-	fprintf(stderr, " rbp: %016zx    r8: %016zx    r9: %016zx\n", rbp, r8,  r9);
-	fprintf(stderr, " r10: %016zx   r11: %016zx   r12: %016zx\n", r10, r11, r12);
-	fprintf(stderr, " r13: %016zx   r14: %016zx   r15: %016zx\n", r13, r14, r15);
+	LOG_DEBUG("\n Dump state of CPU %d\n", id);
+	LOG_DEBUG("\n Registers:\n");
+	LOG_DEBUG(" ----------\n");
+	LOG_DEBUG(" rip: %016zx   rsp: %016zx flags: %016zx\n", rip, rsp, rflags);
+	LOG_DEBUG(" rax: %016zx   rbx: %016zx   rcx: %016zx\n", rax, rbx, rcx);
+	LOG_DEBUG(" rdx: %016zx   rsi: %016zx   rdi: %016zx\n", rdx, rsi, rdi);
+	LOG_DEBUG(" rbp: %016zx    r8: %016zx    r9: %016zx\n", rbp, r8,  r9);
+	LOG_DEBUG(" r10: %016zx   r11: %016zx   r12: %016zx\n", r10, r11, r12);
+	LOG_DEBUG(" r13: %016zx   r14: %016zx   r15: %016zx\n", r13, r14, r15);
 
 	cr0 = sregs->cr0; cr2 = sregs->cr2; cr3 = sregs->cr3;
 	cr4 = sregs->cr4; cr8 = sregs->cr8;
 
-	fprintf(stderr, " cr0: %016zx   cr2: %016zx   cr3: %016zx\n", cr0, cr2, cr3);
-	fprintf(stderr, " cr4: %016zx   cr8: %016zx\n", cr4, cr8);
-	fprintf(stderr, "\n Segment registers:\n");
-	fprintf(stderr,   " ------------------\n");
-	fprintf(stderr, " register  selector  base              limit     type  p dpl db s l g avl\n");
+	LOG_DEBUG(" cr0: %016zx   cr2: %016zx   cr3: %016zx\n", cr0, cr2, cr3);
+	LOG_DEBUG(" cr4: %016zx   cr8: %016zx\n", cr4, cr8);
+	LOG_DEBUG("\n Segment registers:\n");
+	LOG_DEBUG(  " ------------------\n");
+	LOG_DEBUG(" register  selector  base              limit     type  p dpl db s l g avl\n");
 	show_segment("cs ", &sregs->cs);
 	show_segment("ss ", &sregs->ss);
 	show_segment("ds ", &sregs->ds);
@@ -701,21 +701,21 @@ static void show_registers(int id, struct kvm_regs* regs, struct kvm_sregs* sreg
 	show_dtable("gdt", &sregs->gdt);
 	show_dtable("idt", &sregs->idt);
 
-	fprintf(stderr, "\n APIC:\n");
-	fprintf(stderr,   " -----\n");
-	fprintf(stderr, " efer: %016zx  apic base: %016zx\n",
+	LOG_DEBUG("\n APIC:\n");
+	LOG_DEBUG(  " -----\n");
+	LOG_DEBUG(" efer: %016zx  apic base: %016zx\n",
 		(size_t) sregs->efer, (size_t) sregs->apic_base);
 
-	fprintf(stderr, "\n Interrupt bitmap:\n");
-	fprintf(stderr,   " -----------------\n");
+	LOG_DEBUG("\n Interrupt bitmap:\n");
+	LOG_DEBUG(  " -----------------\n");
 	for (i = 0; i < (KVM_NR_INTERRUPTS + 63) / 64; i++)
-		fprintf(stderr, " %016zx", (size_t) sregs->interrupt_bitmap[i]);
-	fprintf(stderr, "\n");
+		LOG_DEBUG(" %016zx", (size_t) sregs->interrupt_bitmap[i]);
+	LOG_DEBUG("\n");
 }
 
 static void print_registers(void)
 {
-	fprintf(stderr, "print_registers\n");
+	LOG_DEBUG("print_registers\n");
 	struct kvm_regs regs;
 	struct kvm_sregs sregs;
 
@@ -895,72 +895,6 @@ static inline void check_network(void)
 	}
 }
 
-static int vcpu_loop_fork(void)
-{
-	fprintf(stderr, "vcpu_loop_fork\n");
-	int ret;
-
-	/* Try to determine the smallest fd value the guest can use, assume they
-	 * are given sequentially by the kernel */
-	int max_guest_fd = open("/tmp", O_RDONLY, 0x0);
-	if(max_guest_fd != -1) {
-		close(max_guest_fd);
-	} else {
-		/* for now at least let's not let app close stdin/out/err */
-		max_guest_fd = 2;
-	}
-
-	if (restart) {
-		pthread_barrier_wait(&barrier);
-		if (cpuid == 0)
-			no_checkpoint++;
-	}
-	fprintf(stderr, "ncores = %d\n", ncores);
-	if (verbose)
-		puts("uhyve is entering vcpu_loop");
-	
-	for(int i = 0;i < 2; i++)
-	{
-		ret = ioctl(vcpufd, KVM_RUN, NULL);
-		print_registers();
-
-		fprintf(stderr, "ioctl ret = %d\n", ret);
-		fprintf(stderr, "exit reason = 0x%x\n", run->exit_reason);
-
-		/* handle requests */
-		switch (run->exit_reason) {
-			case KVM_EXIT_IO:
-				fprintf(stderr, "forked port 0x%x\n", run->io.port);
-				switch (run->io.port) {
-					case UHYVE_PORT_PFAULT: {
-						fprintf(stderr, "run print_registers\n");
-						print_registers();
-
-						char addr2line_call[128];
-						unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
-						uhyve_pfault_t *arg = (uhyve_pfault_t *)(guest_mem + data);
-						fprintf(stderr, "GUEST PAGE FAULT @0x%lx (RIP @0x%lx)\n",
-								arg->addr, arg->rip);
-						sprintf(addr2line_call, "addr2line -a %lx -e %s\n", arg->rip,
-								(arg->rip >= tux_start_address) ? htux_bin :
-								htux_kernel);
-						fprintf(stderr, "%s\n", addr2line_call);
-						// system(addr2line_call);
-
-						break;
-					}
-					default:
-						break;
-				}
-				break;
-			default:
-				fprintf(stderr, "run->exit_reason = %x\n", run->exit_reason);
-				break;
-		}
-	}
-	return 0;
-}
-
 static int vcpu_loop(void)
 {
 	int ret;
@@ -980,9 +914,8 @@ static int vcpu_loop(void)
 		if (cpuid == 0)
 			no_checkpoint++;
 	}
-	fprintf(stderr, "ncores = %d\n", ncores);
-	if (verbose)
-		puts("uhyve is entering vcpu_loop");
+	LOG_DEBUG("ncores = %d\n", ncores);
+	LOG_INFO("uhyve is entering vcpu_loop\n");
 
 	while (1) {
 		ret = ioctl(vcpufd, KVM_RUN, NULL);
@@ -1007,7 +940,7 @@ static int vcpu_loop(void)
 		/* handle requests */
 		switch (run->exit_reason) {
 		case KVM_EXIT_HLT:
-			fprintf(stderr, "Guest has halted the CPU, this is considered as a normal exit.\n");
+			LOG_WARNING("Guest has halted the CPU, this is considered as a normal exit.\n");
 			if(uhyve_gdb_enabled)
 				uhyve_gdb_handle_term();
 			return 0;
@@ -1073,7 +1006,7 @@ static int vcpu_loop(void)
 
 					rval = realpath(filename, abspath);
 					if(rval && !strcmp(abspath, "/dev/kvm")) {
-						fprintf(stderr, "guest tries to access /dev/kvm\n");
+						LOG_ERROR("guest tries to access /dev/kvm\n");
 						exit(-1);
 					}
 				}
@@ -1388,7 +1321,7 @@ static int vcpu_loop(void)
 					/* Set the host path */
 					while(line[i] != ';') {
 						if(i >= MINIFS_LOAD_MAXPATH) {
-							fprintf(stderr, "minifs load from %s: %s too long\n",
+							LOG_ERROR("minifs load from %s: %s too long\n",
 									filename, "hostpath");
 							arg->hostpath[0] = arg->guestpath[0] = '\0';
 							break;
@@ -1403,7 +1336,7 @@ static int vcpu_loop(void)
 					guestpath_offset = i;
 					while(line[i] != '\n') {
 						if((i-guestpath_offset) >= MINIFS_LOAD_MAXPATH) {
-							fprintf(stderr, "minifs load from %s: %s too long\n",
+							LOG_ERROR("minifs load from %s: %s too long\n",
 									filename, "hostpath");
 							arg->hostpath[0] = arg->guestpath[0] = '\0';
 							break;
@@ -1483,45 +1416,45 @@ static int vcpu_loop(void)
 				}
 
 			case UHYVE_PORT_FORK: {
-				fprintf(stderr, "UHYVE_PORT_FORK: Hypervisor fork\n");
+				LOG_DEBUG("UHYVE_PORT_FORK: Hypervisor fork\n");
 				struct vcpu_state *state = (struct vcpu_state *)malloc(sizeof(struct vcpu_state) * ncores);
 
-				fprintf(stderr, "UHYVE_PORT_FORK: Old cpu id = %d\n", vcpufd);
+				LOG_DEBUG("UHYVE_PORT_FORK: Old cpu id = %d\n", vcpufd);
 
 				for(int i = 0; i < ncores; i++)
 				{
-					fprintf(stderr, "UHYVE_PORT_FORK: Get state from fd = %d\n", vcpu_fds[i]);
+					LOG_DEBUG("UHYVE_PORT_FORK: Get state from fd = %d\n", vcpu_fds[i]);
 					state[i] = get_vcpu_state(vcpu_fds[i]);
 				}
 				int ret = fork();
-				fprintf(stderr, "UHYVE_PORT_FORK: ret = %d\n", ret);
+				LOG_DEBUG("UHYVE_PORT_FORK: ret = %d\n", ret);
 
 				unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
 
-				fprintf(stderr, "UHYVE_PORT_FORK: ret = %d, data offset = %d\n", ret, data);
+				LOG_DEBUG("UHYVE_PORT_FORK: ret = %d, data offset = %d\n", ret, data);
 				uhyve_fork_t *args = (uhyve_fork_t *) (guest_mem+data);
 
 				if(ret != 0) // Parent
 				{
-					fprintf(stderr, "UHYVE_PORT_FORK: I'm parent\n");
+					LOG_DEBUG("UHYVE_PORT_FORK: I'm parent\n");
 					args->ret = ret;
 					print_registers();
 					free(state);
-					fprintf(stderr, "UHYVE_PORT_FORK: Parent end\n");
+					LOG_DEBUG("UHYVE_PORT_FORK: Parent end\n");
 				}
 				else // Child
 				{
 					prog_cnt++;
-					fprintf(stderr, "UHYVE_PORT_FORK: I'm child\n");
+					LOG_DEBUG("UHYVE_PORT_FORK: I'm child\n");
 					args->ret = 0;
 
 					uhyve_init_fork();
 					cpuid = 0;
 
 					state[0].regs.rip++;
-					fprintf(stderr, "new rip = 0x%llx", state[0].regs.rip);
+					LOG_DEBUG("new rip = 0x%llx", state[0].regs.rip);
 					vcpu_init_with_state(state[0]);
-					fprintf(stderr, "UHYVE_PORT_FORK: New cpu id = %d\n", vcpufd);
+					LOG_DEBUG("UHYVE_PORT_FORK: New cpu id = %d\n", vcpufd);
 					print_registers();
 					// debug_mem(state[0].regs.rip);
 
@@ -1561,7 +1494,7 @@ static int vcpu_loop(void)
 			else
 				print_registers();
 		default:
-			fprintf(stderr, "KVM: unhandled exit: exit_reason = 0x%x\n", run->exit_reason);
+			LOG_ERROR("KVM: unhandled exit: exit_reason = 0x%x\n", run->exit_reason);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -1677,7 +1610,7 @@ static int vcpu_init(void)
 
 static void save_cpu_state(void)
 {
-	fprintf(stderr, "save_cpu_state\n");
+	LOG_DEBUG("save_cpu_state\n");
 	struct {
 		struct kvm_msrs info;
 		struct kvm_msr_entry entries[MAX_MSR_ENTRIES];
@@ -1846,8 +1779,7 @@ int uhyve_init(char** argv)
 		fscanf(f, "full checkpoint: %d", &tmp);
 		full_checkpoint = tmp ? true : false;
 
-		if (verbose)
-			fprintf(stderr, "Restart from checkpoint %u (ncores %d, mem size 0x%zx)\n", no_checkpoint, ncores, guest_size);
+		LOG_DEBUG("Restart from checkpoint %u (ncores %d, mem size 0x%zx)\n", no_checkpoint, ncores, guest_size);
 		fclose(f);
 	} else {
 		const char* hermit_memory = getenv("HERMIT_MEM");
@@ -1860,7 +1792,7 @@ int uhyve_init(char** argv)
 
 		const char* full_chk = getenv("HERMIT_FULLCHECKPOINT");
 		if (full_chk && (strcmp(full_chk, "0") != 0)) {
-			fprintf(stderr, "full\n");
+			LOG_ERROR("full\n");
 			full_checkpoint = true;
 		}
 	}//get from env: mem cores full_chk(?)
@@ -1888,7 +1820,7 @@ int uhyve_init(char** argv)
 	/* Initialize seccomp filter */
 	if(uhyve_seccomp_enabled) {
 		if(uhyve_seccomp_init(vmfd)) {
-			fprintf(stderr, "Error configuring seccomp\n");
+			LOG_ERROR("Error configuring seccomp\n");
 			exit(-1);
 		}
 	}
@@ -1932,7 +1864,7 @@ int uhyve_init(char** argv)
 		 */
 		madvise(guest_mem, guest_size, MADV_MERGEABLE);
 		if (verbose)
-			fprintf(stderr, "VM uses KSN feature \"mergeable\" to reduce the memory footprint.\n");
+			LOG_ERROR("VM uses KSN feature \"mergeable\" to reduce the memory footprint.\n");
 	}
 
 	struct kvm_userspace_memory_region kvm_region = {
@@ -2007,7 +1939,7 @@ int uhyve_init(char** argv)
 	if (hermit_tux)
 	{
 		if (argv[2] == NULL) {
-			fprintf(stderr, "Hermitux: linux binary missing\n");
+			LOG_ERROR("Hermitux: linux binary missing\n");
 			exit(EXIT_FAILURE);
 		}
 		strcpy(htux_bin, argv[2]);
@@ -2047,7 +1979,7 @@ int uhyve_init(char** argv)
 
 int uhyve_init_fork()
 {
-	fprintf(stderr, "uhyve_init_fork\n");
+	LOG_DEBUG("uhyve_init_fork\n");
 	// atexit(uhyve_atexit);
 
 	kvm = open("/dev/kvm", O_RDWR | O_CLOEXEC);
@@ -2057,12 +1989,12 @@ int uhyve_init_fork()
 	/* Create the virtual machine */
 	vmfd = kvm_ioctl(kvm, KVM_CREATE_VM, 0);
 
-	fprintf(stderr, "KVM_CREATE_VM fd = %d\n", vmfd);
+	LOG_DEBUG("KVM_CREATE_VM fd = %d\n", vmfd);
 
 	/* Initialize seccomp filter */
 	if(uhyve_seccomp_enabled) {
 		if(uhyve_seccomp_init(vmfd)) {
-			fprintf(stderr, "Error configuring seccomp\n");
+			LOG_ERROR("Error configuring seccomp\n");
 			exit(-1);
 		}
 	}
@@ -2148,7 +2080,7 @@ int uhyve_init_fork()
 	// create first CPU, it will be the boot processor by default
 	// Postponed to next func
 
-	fprintf(stderr, "uhyve_init_fork end\n");
+	LOG_DEBUG("uhyve_init_fork end\n");
 }
 
 struct vcpu_state get_vcpu_state(int vcpufd)
@@ -2188,15 +2120,15 @@ void set_vcpu_state(int vcpufd, struct vcpu_state state)
 
 static int vcpu_init_with_state(struct vcpu_state state)
 {
-	fprintf(stderr, "vcpu_init_with_state\n");
+	LOG_DEBUG("vcpu_init_with_state\n");
 	vcpu_fds[cpuid] = vcpufd = kvm_ioctl(vmfd, KVM_CREATE_VCPU, cpuid);
 
-	fprintf(stderr, "KVM_CREATE_VCPU\n");
+	LOG_DEBUG("KVM_CREATE_VCPU\n");
 
 	/* Map the shared kvm_run structure and following data. */
 	size_t mmap_size = (size_t) kvm_ioctl(kvm, KVM_GET_VCPU_MMAP_SIZE, NULL);
 
-	fprintf(stderr, "KVM_GET_VCPU_MMAP_SIZE = %ld\n", mmap_size);
+	LOG_DEBUG("KVM_GET_VCPU_MMAP_SIZE = %ld\n", mmap_size);
 
 	// TODO: 每个vcpu初始化的时候都会运行一边这个，但是线程之间共享堆，也就是会把run给覆盖掉
 	// 这个函数是 static 的会不会有影响
@@ -2211,7 +2143,7 @@ static int vcpu_init_with_state(struct vcpu_state state)
 	show_registers(0, &state.regs, &state.sregs);
 	set_vcpu_state(vcpufd, state);
 
-	fprintf(stderr, "vcpu_init_with_state end\n");
+	LOG_DEBUG("vcpu_init_with_state end\n");
 	return 0;
 }
 
@@ -2499,14 +2431,14 @@ int uhyve_loop(int argc, char **argv)
 
 int uhyve_loop_with_state_fork(struct vcpu_state *state)
 {
-	fprintf(stderr, "uhyve_loop_with_state_fork\n");
+	LOG_DEBUG("uhyve_loop_with_state_fork\n");
 	int i;
 	vcpu_threads[0] = pthread_self();
-	fprintf(stderr, "pthread_self = 0x%lx\n", vcpu_threads[0]);
+	LOG_DEBUG("pthread_self = 0x%lx\n", vcpu_threads[0]);
 
 	for(size_t i = 1; i < ncores; i++)
 	{
-		fprintf(stderr, "create uhyve thread %ld\n", i);
+		LOG_DEBUG("create uhyve thread %ld\n", i);
 		struct thread_arg *arg = (struct thread_arg *)malloc(sizeof(struct thread_arg));
 		arg->cpuid = i;
 		arg->state = state[i];
@@ -2520,17 +2452,17 @@ int uhyve_loop_with_state_fork(struct vcpu_state *state)
 	if(uhyve_seccomp_enabled) {
 		for(i=0; i<ncores; i++)
 			if(uhyve_seccomp_add_vcpu_fd(vcpu_fds[i])) {
-				fprintf(stderr, "Cannot add vcpu_fd to seccomp filter\n");
+				LOG_ERROR("Cannot add vcpu_fd to seccomp filter\n");
 				exit(-1);
 			}
 
 		if(uhyve_seccomp_load()) {
-			fprintf(stderr, "Cannot load seccomp filter\n");
+			LOG_ERROR("Cannot load seccomp filter\n");
 			exit(-1);
 		}
 	}
 
-	fprintf(stderr, "vcpu_loop\n");
+	LOG_DEBUG("vcpu_loop\n");
 	// Run first CPU
 	return vcpu_loop();
 }

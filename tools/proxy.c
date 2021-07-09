@@ -35,6 +35,7 @@
 #include <netinet/in.h>
 #include <sched.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,9 +45,9 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <stdbool.h>
 #include <unistd.h>
 
+#include "logging.h"
 #include "proxy.h"
 
 #define MAX_PATH	255
@@ -145,6 +146,23 @@ static int env_init(char** argv)
 {
 	char* str;
 	struct sigaction sINT, sTERM;
+
+	str = getenv("LOG_LEVEL");
+	if(str)
+	{
+		if(strcmp(str, "0") == 0)
+		{
+			LOG_LEVEL = 0;
+		}
+		else
+		{
+			int level = atoi(str);
+			if(level > 0)
+			{
+				LOG_LEVEL = level;
+			}
+		}
+	}
 
 	str = getenv("HERMIT_VERBOSE");
 	if (str && (strcmp(str, "0") != 0))

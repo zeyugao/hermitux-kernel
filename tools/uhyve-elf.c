@@ -27,22 +27,22 @@
 
 #define _GNU_SOURCE
 
-#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <errno.h>
-#include <limits.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <elf.h>
 
 #include "proxy.h"
-#include "uhyve.h"
 #include "uhyve-elf.h"
+#include "uhyve.h"
 
 #define PAGE_BITS			12
 #define PAGE_MASK			((~0UL) << PAGE_BITS)
@@ -63,12 +63,11 @@ int uhyve_elf_loader(const char* path) {
 	size_t buflen;
 	int fd, ret;
 
-	if (verbose)
-		fprintf(stderr, "Uhyve's elf loader starts, considering: %s\n", path);
+	LOG_DEBUG("Uhyve's elf loader starts, considering: %s\n", path);
 
 	fd = open(path, O_RDONLY);
 	if (fd == -1) {
-		fprintf(stderr, "Unable to open application file %s", path);
+		LOG_ERROR("Unable to open application file %s", path);
 		return -1;
 	}
 
@@ -87,7 +86,7 @@ int uhyve_elf_loader(const char* path) {
 		|| hdr.e_machine != EM_X86_64
 		|| (hdr.e_type != ET_EXEC && hdr.e_type != ET_DYN)) {
 
-		fprintf(stderr, "Inavlid elf file %d!\n", hdr.e_type);
+		LOG_ERROR("Inavlid elf file %d!\n", hdr.e_type);
 		ret = -1;
 		goto out;
 	}
@@ -138,8 +137,7 @@ int uhyve_elf_loader(const char* path) {
 	}
 
 	tux_entry = hdr.e_entry + pie_offset;
-	if(verbose)
-		fprintf(stderr, "Uhyve's elf loader found entry point at 0x%zx in file "
+	LOG_DEBUG("Uhyve's elf loader found entry point at 0x%zx in file "
 				"%s\n", hdr.e_entry + pie_offset, path);
 
 	/*
@@ -158,8 +156,7 @@ int uhyve_elf_loader(const char* path) {
 		if(!tux_start_address || (paddr + pie_offset < tux_start_address))
 			tux_start_address = paddr + pie_offset;
 
-		if (verbose)
-			printf("Load elf file at 0x%zx, file size 0x%zx, memory size "
+		LOG_DEBUG("Load elf file at 0x%zx, file size 0x%zx, memory size "
 					"0x%zx\n", paddr + pie_offset, filesz, memsz);
 		tux_size = paddr + memsz - tux_start_address + pie_offset;
 
