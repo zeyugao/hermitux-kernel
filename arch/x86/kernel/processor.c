@@ -402,8 +402,8 @@ int cpu_detection(void) {
 		first_time = 1;
 
 		cpuid(0, &level, (uint32_t*) cpu_vendor, (uint32_t*)(cpu_vendor+8), (uint32_t*)(cpu_vendor+4));
-		kprintf("cpuid level %d\n", level);
-		kprintf("CPU vendor: %s\n", cpu_vendor);
+		LOG_INFO("cpuid level %d\n", level);
+		LOG_INFO("CPU vendor: %s\n", cpu_vendor);
 
 		cpuid(1, &a, &b, &cpu_info.feature2, &cpu_info.feature1);
 
@@ -422,7 +422,7 @@ int cpu_detection(void) {
 			cpuid(0x80000002, bint+0, bint+1, bint+2, bint+3);
 			cpuid(0x80000003, bint+4, bint+5, bint+6, bint+7);
 			cpuid(0x80000004, bint+8, bint+9, bint+10, bint+11);
-			kprintf("Processor: %s\n", cpu_brand);
+			LOG_INFO("Processor: %s\n", cpu_brand);
 		}
 		if (extended >= 0x80000008)
 			cpuid(0x80000008, &cpu_info.addr_width, &b, &c, &d);
@@ -435,7 +435,7 @@ int cpu_detection(void) {
 	}
 
 	if (first_time) {
-		kprintf("Paging features: %s%s%s%s%s%s%s%s\n",
+		LOG_INFO("Paging features: %s%s%s%s%s%s%s%s\n",
 				(cpu_info.feature1 & CPU_FEATURE_PSE) ? "PSE (2/4Mb) " : "",
 				(cpu_info.feature1 & CPU_FEATURE_PAE) ? "PAE " : "",
 				(cpu_info.feature1 & CPU_FEATURE_PGE) ? "PGE " : "",
@@ -445,10 +445,10 @@ int cpu_detection(void) {
 				(cpu_info.feature3 & CPU_FEATURE_1GBHP) ? "PSE (1Gb) " : "",
 				(cpu_info.feature3 & CPU_FEATURE_LM) ? "LM" : "");
 
-		kprintf("Physical adress-width: %u bits\n", cpu_info.addr_width & 0xff);
-		kprintf("Linear adress-width: %u bits\n", (cpu_info.addr_width >> 8) & 0xff);
-		kprintf("Sysenter instruction: %s\n", (cpu_info.feature1 & CPU_FEATURE_SEP) ? "available" : "unavailable");
-		kprintf("Syscall instruction: %s\n", (cpu_info.feature3 & CPU_FEATURE_SYSCALL) ? "available" : "unavailable");
+		LOG_INFO("Physical adress-width: %u bits\n", cpu_info.addr_width & 0xff);
+		LOG_INFO("Linear adress-width: %u bits\n", (cpu_info.addr_width >> 8) & 0xff);
+		LOG_INFO("Sysenter instruction: %s\n", (cpu_info.feature1 & CPU_FEATURE_SEP) ? "available" : "unavailable");
+		LOG_INFO("Syscall instruction: %s\n", (cpu_info.feature3 & CPU_FEATURE_SYSCALL) ? "available" : "unavailable");
 	}
 
 	//TODO: add check for SMEP, PCE and SMAP
@@ -511,7 +511,7 @@ int cpu_detection(void) {
 		xsetbv(0, xcr0);
 
 		if (first_time)
-			kprintf("Set XCR0 to 0x%llx\n", xgetbv(0));
+			LOG_INFO("Set XCR0 to 0x%llx\n", xgetbv(0));
 	}
 
 	// libos => currently no support of syscalls
@@ -522,7 +522,7 @@ int cpu_detection(void) {
 		wrmsr(MSR_LSTAR, (size_t) &isyscall);
 		//  clear IF flag during an interrupt
 		wrmsr(MSR_SYSCALL_MASK, EFLAGS_TF|EFLAGS_DF|EFLAGS_IF|EFLAGS_AC|EFLAGS_NT);
-	} else kprintf("Processor doesn't support syscalls\n");
+	} else LOG_INFO("Processor doesn't support syscalls\n");
 #endif
 
 	if (has_nx())
