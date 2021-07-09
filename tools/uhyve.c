@@ -194,6 +194,7 @@ static bool uhyve_profiler_enabled = false;
 bool uhyve_seccomp_enabled = false;
 char htux_bin[PATH_MAX+1];
 char htux_kernel[PATH_MAX+1];
+int prog_cnt = 0;
 
 struct vcpu_state {
 	struct kvm_regs regs;
@@ -299,7 +300,7 @@ static void uhyve_exit(void* arg)
 
 static void uhyve_atexit(void)
 {
-	fprintf(stderr, "uhyve_atexit\n");
+	fprintf(stderr, "uhyve_atexit prog_cnt = %d\n", prog_cnt);
 	uhyve_exit(NULL);
 
 	if(uhyve_profiler_enabled)
@@ -1510,6 +1511,7 @@ static int vcpu_loop(void)
 				}
 				else // Child
 				{
+					prog_cnt++;
 					fprintf(stderr, "UHYVE_PORT_FORK: I'm child\n");
 					args->ret = 0;
 
@@ -2475,7 +2477,7 @@ int uhyve_loop(int argc, char **argv)
 	/* init uhyve gdb support */
 	if(uhyve_gdb_enabled)
 	{
-		// uhyve_gdb_init(vcpufd);
+		uhyve_gdb_init(vcpufd);
 	}
 	/* Add vcpu_fds to the seccomp filter then load it */
 	if(uhyve_seccomp_enabled) {
