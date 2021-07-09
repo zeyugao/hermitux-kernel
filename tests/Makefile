@@ -7,13 +7,13 @@ KERNEL=${PREFIX}/x86_64-hermit/extra/tests/hermitux
 	gcc $< -o $@ -static
 
 run%: %.out
-	sudo HERMIT_ISLE=uhyve HERMIT_TUX=1 HERMIT_VERBOSE=1 HERMIT_DEBUG=${HERMIT_DEBUG} \
+	sudo -E HERMIT_ISLE=uhyve HERMIT_TUX=1 HERMIT_VERBOSE=1 HERMIT_DEBUG=${HERMIT_DEBUG} \
 		${PROXY} \
 		${KERNEL} \
 		$<
 
 run_test:
-	sudo HERMIT_ISLE=uhyve HERMIT_TUX=1 HERMIT_VERBOSE=1 HERMIT_DEBUG=${HERMIT_DEBUG} \
+	sudo -E HERMIT_ISLE=uhyve HERMIT_TUX=1 HERMIT_VERBOSE=1 HERMIT_DEBUG=${HERMIT_DEBUG} \
 		${PROXY} \
 		${KERNEL} \
 		/home/elsa/Code/hermitux-rewrite/syscall_rewriter/src/test
